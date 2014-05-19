@@ -12,9 +12,10 @@ class RedArrowUI(BaseWindowController):
     def __init__(self):
         
         self.drawing = False
+        self.showLabels = False
         self.errors = []
         
-        self.w = vanilla.FloatingWindow((140, 63), "RedArrow")
+        self.w = vanilla.FloatingWindow((140, 86), "RedArrow")
         y = 5
         self.w.showGlyphStatusButton = vanilla.Button((10, y , -10, 25), "Show red arrows",
             callback=self.checkGlyphStatus,
@@ -25,7 +26,11 @@ class RedArrowUI(BaseWindowController):
             callback=self.uncheckGlyphStatus,
             sizeStyle="small",
         )
-        y += 30
+        y += 28
+        self.w.drawLabels = vanilla.CheckBox((10, y, -10, 25), "Show labels",
+            callback=self.toggleShowLabels,
+            sizeStyle="small",
+        )
                 
         self.w.clearGlyphStatusButton.enable(False)
         #self.w.showGlyphStatusButton.enable(True)
@@ -60,6 +65,14 @@ class RedArrowUI(BaseWindowController):
         UpdateCurrentGlyphView()
     
     
+    def toggleShowLabels(self, sender):
+        if self.showLabels:
+            self.showLabels = False
+        else:
+            self.showLabels = True
+        UpdateCurrentGlyphView()
+    
+    
     def addObservers(self):
         addObserver(self, "drawArrows", "drawInactive")
         addObserver(self, "drawArrows", "drawBackground")
@@ -83,12 +96,14 @@ class RedArrowUI(BaseWindowController):
         line(0, width/2, 0, -size)
         line(0, 0, size, -size)
         #rect(x-scale, y-scale, scale, scale)
-        fill(0, 0, 0, 1)
-        stroke(None)
-        font("LucidaGrande")
-        fontSize(int(round(size * 1.1)))
-        text(kind, (int(round(size * 1.5)), int(round(-1.05 * size))))
+        if self.showLabels:
+            fill(0, 0, 0, 1)
+            stroke(None)
+            font("LucidaGrande")
+            fontSize(int(round(size * 1.1)))
+            text(kind, (int(round(size * 1.5)), int(round(-1.05 * size))))
         restore()
+    
     
     def drawArrows(self, notification):
         scale = notification["scale"]
