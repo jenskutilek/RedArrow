@@ -2,7 +2,7 @@ import vanilla
 from defconAppKit.windows.baseWindow import BaseWindowController
 from mojo.events import addObserver, removeObserver
 from mojo.UI import UpdateCurrentGlyphView
-from mojo.drawingTools import save, restore, fill, stroke, line, strokeWidth, rect, translate, text
+from mojo.drawingTools import save, restore, fill, stroke, line, strokeWidth, rect, translate, text, fontSize, font
 
 import pen
 reload(pen)
@@ -14,7 +14,7 @@ class RedArrowUI(BaseWindowController):
         self.drawing = False
         self.errors = []
         
-        self.w = vanilla.FloatingWindow((180, 280), "RedArrow")
+        self.w = vanilla.FloatingWindow((140, 63), "RedArrow")
         y = 5
         self.w.showGlyphStatusButton = vanilla.Button((10, y , -10, 25), "Show red arrows",
             callback=self.checkGlyphStatus,
@@ -33,19 +33,22 @@ class RedArrowUI(BaseWindowController):
         self.w.open()
     
     
-    def checkGlyphStatus(self, sender):
-        self.w.showGlyphStatusButton.enable(False)
-        self.addObservers()
-        self.drawing = True
-        
+    def updateOutlineCheck(self, sender=None):
         g = CurrentGlyph()
         
         if g is not None:
             myPen = RedArrowPen(CurrentFont(), True, 1)
             g.draw(myPen)
             self.errors = myPen.errors
-        self.w.clearGlyphStatusButton.enable(True)
         UpdateCurrentGlyphView()
+    
+    
+    def checkGlyphStatus(self, sender):
+        self.w.showGlyphStatusButton.enable(False)
+        self.addObservers()
+        self.drawing = True
+        self.updateOutlineCheck()
+        self.w.clearGlyphStatusButton.enable(True)
         
     
     def uncheckGlyphStatus(self, sender):
@@ -60,11 +63,13 @@ class RedArrowUI(BaseWindowController):
     def addObservers(self):
         addObserver(self, "drawArrows", "drawInactive")
         addObserver(self, "drawArrows", "drawBackground")
+        addObserver(self, "updateOutlineCheck", "currentGlyphChanged")
     
     
     def removeObservers(self):
         removeObserver(self, "drawBackground")
         removeObserver(self, "drawInactive")
+        removeObserver(self, "currentGlyphChanged")
     
     
     def drawArrow(self, position, kind, size, width):
@@ -73,14 +78,16 @@ class RedArrowUI(BaseWindowController):
         translate(x, y)
         fill(0, 0.8, 0, 0.1)
         strokeWidth(width)
-        stroke(1.0, 0, 0, 1)
-        line(0, 0, size, 0)
-        line(0, 0, 0, -size)
+        stroke(0.9, 0.1, 0, 1)
+        line(-width/2, 0, size, 0)
+        line(0, width/2, 0, -size)
         line(0, 0, size, -size)
         #rect(x-scale, y-scale, scale, scale)
         fill(0, 0, 0, 1)
         stroke(None)
-        text(kind, (size * 1.5, - size))
+        font("LucidaGrande")
+        fontSize(int(round(size * 1.1)))
+        text(kind, (int(round(size * 1.5)), int(round(-1.05 * size))))
         restore()
     
     def drawArrows(self, notification):
