@@ -2,6 +2,9 @@ from math import sqrt
 from fontTools.pens.basePen import BasePen
 from robofab.misc.arrayTools import pointInRect, normRect
 
+def getTriangleArea(a, b, c):
+    return (b[0] -a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])
+
 class RedArrowError(object):
     def __init__(self, position, kind, badness=1):
         self.position = position
@@ -22,6 +25,7 @@ class RedArrowPen(BasePen):
         self.numErrors = 0
         # final point of the previous segment, needed for bbox calculation
         self._prev = None
+        self._prev_ref = None
     
     def _getBadness(self, pointToCheck, myRect):
         # calculate distance of point to rect
@@ -72,19 +76,34 @@ class RedArrowPen(BasePen):
                 self.errors.append(RedArrowError(pointToCheck, "Extremum"))
                 self.numErrors += 1
     
+    def _checkSmooth(self, pointToCheck, refPoint):
+        if self._prev_ref is not None:
+            a = abs(getTriangleArea(self._prev_ref, refPoint, pointToCheck))
+            if 4000 > a > 200:
+                #print a, self._prev_ref, refPoint, pointToCheck
+                self.errors.append(RedArrowError(pointToCheck, "Smooth Connection (badness %i)" % a, a))
+                self.numErrors += 1
+    
     def _moveTo(self, pt):
+        self._prev_ref = None
         self._prev = pt
     
     def _lineTo(self, pt):
+        self._checkSmooth(self._prev, pt)
+        self._prev_ref = self._prev
         self._prev = pt
     
     def _curveToOne(self, bcp1, bcp2, pt):
         for bcp in [bcp1, bcp2]:
             self._checkBbox(bcp, pt)
+        self._checkSmooth(self._prev, bcp1)
+        self._prev_ref = bcp2
         self._prev = pt
     
     def _qCurveToOne(self, bcp, pt):
         self._checkBbox(bcp, pt)
+        self._checkSmooth(self._prev, pt)
+        self._prev_ref = bcp
         self._prev = pt
     
     def addComponent(self, baseGlyph, transformation):
