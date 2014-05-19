@@ -3,9 +3,10 @@ from fontTools.pens.basePen import BasePen
 from robofab.misc.arrayTools import pointInRect, normRect
 
 class RedArrowError(object):
-    def __init__(self, position, kind):
+    def __init__(self, position, kind, badness=1):
         self.position = position
         self.kind = kind
+        self.badness = badness
     
     def __repr__(self):
         return "%s at (%i, %i)" % (self.kind, self.position[0], self.position[1])
@@ -65,10 +66,10 @@ class RedArrowPen(BasePen):
             if self.calculateBadness:
                 badness = self._getBadness(pointToCheck, myRect)
                 if badness >= self.ignoreBelow:
-                    self.errors.append(RedArrowError(pointToCheck, "Extremum (badness %i units)" % badness))
+                    self.errors.append(RedArrowError(pointToCheck, "Extremum (badness %i units)" % badness, badness))
                     self.numErrors += 1
             else:
-                self.errors.append(RedArrowError(pointToCheck))
+                self.errors.append(RedArrowError(pointToCheck, "Extremum"))
                 self.numErrors += 1
     
     def _moveTo(self, pt):
