@@ -81,9 +81,10 @@ class RedArrowPen(BasePen):
         myRect = normRect((self._prev[0], self._prev[1], pt[0], pt[1]))
         if not (pointInRect(bcp1, myRect) and pointInRect(bcp2, myRect)):
             roots = getExtremPointsCubic(self._prev, bcp1, bcp2, pt)
-            for p1, p2, p3, p4 in roots[:-1]:
-                self.errors.append(RedArrowError(p4, "Missing extremum"))
-                self.numErrors += 1
+            if roots is not None:
+                for p1, p2, p3, p4 in roots[:-1]:
+                    self.errors.append(RedArrowError((round(p4[0]), round(p4[1])), "Missing extremum"))
+                    self.numErrors += 1
     
     def _checkSmooth(self, pointToCheck, refPoint):
         if self._prev_ref is not None:
