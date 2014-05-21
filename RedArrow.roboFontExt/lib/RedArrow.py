@@ -81,12 +81,14 @@ class RedArrowUI(BaseWindowController):
         addObserver(self, "drawArrows", "drawInactive")
         addObserver(self, "drawArrows", "drawBackground")
         addObserver(self, "updateOutlineCheck", "currentGlyphChanged")
+        addObserver(self, "updateOutlineCheck", "draw")
     
     
     def removeObservers(self):
         removeObserver(self, "drawBackground")
         removeObserver(self, "drawInactive")
         removeObserver(self, "currentGlyphChanged")
+        removeObserver(self, "draw")
     
     
     def drawArrow(self, position, kind, size, width):
