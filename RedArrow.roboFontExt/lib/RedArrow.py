@@ -3,7 +3,7 @@ from defconAppKit.windows.baseWindow import BaseWindowController
 from mojo.events import addObserver, removeObserver
 from mojo.UI import UpdateCurrentGlyphView
 from mojo.drawingTools import save, restore, fill, stroke, line, strokeWidth, rect, translate, text, fontSize, font
-from time import time
+#from time import time
 
 import pen
 reload(pen)
@@ -40,7 +40,7 @@ class RedArrowUI(BaseWindowController):
     
     
     def updateOutlineCheck(self, sender=None):
-        start = time()
+        #start = time()
         g = CurrentGlyph()
         
         if g is not None:
@@ -48,8 +48,8 @@ class RedArrowUI(BaseWindowController):
             g.draw(myPen)
             self.errors = myPen.errors
         UpdateCurrentGlyphView()
-        stop = time()
-        print "updateOutlineCheck in %0.2f ms." % ((stop-start) * 1000)
+        #stop = time()
+        #print "updateOutlineCheck in %0.2f ms." % ((stop-start) * 1000)
     
     
     def checkGlyphStatus(self, sender):
