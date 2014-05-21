@@ -1,10 +1,27 @@
 from math import sqrt
-from fontTools.pens.basePen import BasePen
-from robofab.misc.arrayTools import pointInRect, normRect
-from lib.tools.extremePoints import getExtremPointsCubic
+from miniFontTools.bezierTools import calcCubicParameters, solveQuadratic, splitCubicAtT
+from miniFontTools.basePen import BasePen
+from miniFontTools.arrayTools import pointInRect, normRect
+
+
+# Helper functions
+
+def getExtremaForCubic(pt1, pt2, pt3, pt4):
+    (ax, ay), (bx, by), c, d = calcCubicParameters(pt1, pt2, pt3, pt4)
+    ax *= 3.0
+    ay *= 3.0
+    bx *= 2.0
+    by *= 2.0
+    roots  = [t for t in solveQuadratic(ax, bx, c[0]) if 0 < t < 1]
+    roots += [t for t in solveQuadratic(ay, by, c[1]) if 0 < t < 1]
+    return [p[3] for p in splitCubicAtT(pt1, pt2, pt3, pt4, *roots)[:-1]]
+
 
 def getTriangleArea(a, b, c):
     return (b[0] -a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])
+
+
+# Classes
 
 class RedArrowError(object):
     def __init__(self, position, kind, badness=1):
@@ -14,7 +31,7 @@ class RedArrowError(object):
     
     def __repr__(self):
         return "%s at (%i, %i)" % (self.kind, self.position[0], self.position[1])
-        
+
 
 class RedArrowPen(BasePen):
     def __init__(self, glyphSet, calculateBadness=True, ignoreBelow=0):
@@ -80,11 +97,9 @@ class RedArrowPen(BasePen):
     def _checkExtremumCubic(self, bcp1, bcp2, pt):
         myRect = normRect((self._prev[0], self._prev[1], pt[0], pt[1]))
         if not (pointInRect(bcp1, myRect) and pointInRect(bcp2, myRect)):
-            roots = getExtremPointsCubic(self._prev, bcp1, bcp2, pt)
-            if roots is not None:
-                for p1, p2, p3, p4 in roots[:-1]:
-                    self.errors.append(RedArrowError((round(p4[0]), round(p4[1])), "Missing extremum"))
-                    self.numErrors += 1
+            for p in getExtremaForCubic(self._prev, bcp1, bcp2, pt):
+                self.errors.append(RedArrowError((round(p[0]), round(p[1])), "Missing extremum"))
+                self.numErrors += 1
     
     def _checkSmooth(self, pointToCheck, refPoint):
         if self._prev_ref is not None:
