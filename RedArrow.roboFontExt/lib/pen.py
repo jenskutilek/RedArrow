@@ -1,36 +1,11 @@
 from math import sqrt
-from miniFontTools.bezierTools import calcCubicParameters, solveQuadratic, splitCubicAtT
-from miniFontTools.basePen import BasePen
-from miniFontTools.arrayTools import pointInRect, normRect
-
-
-# Helper functions
-
-def getExtremaForCubic(pt1, pt2, pt3, pt4):
-    (ax, ay), (bx, by), c, d = calcCubicParameters(pt1, pt2, pt3, pt4)
-    ax *= 3.0
-    ay *= 3.0
-    bx *= 2.0
-    by *= 2.0
-    roots  = [t for t in solveQuadratic(ax, bx, c[0]) if 0 < t < 1]
-    roots += [t for t in solveQuadratic(ay, by, c[1]) if 0 < t < 1]
-    return [p[3] for p in splitCubicAtT(pt1, pt2, pt3, pt4, *roots)[:-1]]
-
+from fontTools.pens.basePen import BasePen
+from robofab.misc.arrayTools import pointInRect, normRect
+from robofab.world import CurrentGlyph # for bbox calculation, FIXME
+from helpers import RedArrowError, getExtremaForCubic
 
 def getTriangleArea(a, b, c):
     return (b[0] -a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])
-
-
-# Classes
-
-class RedArrowError(object):
-    def __init__(self, position, kind, badness=1):
-        self.position = position
-        self.kind = kind
-        self.badness = badness
-    
-    def __repr__(self):
-        return "%s at (%i, %i)" % (self.kind, self.position[0], self.position[1])
 
 
 class RedArrowPen(BasePen):
@@ -39,8 +14,7 @@ class RedArrowPen(BasePen):
         self.__currentPoint = None
         self.calculateBadness = calculateBadness
         self.ignoreBelow = ignoreBelow
-        self.errors = []
-        self.numErrors = 0
+        self.errors = {}
         # final point of the previous segment, needed for bbox calculation
         self._prev = None
         self._prev_ref = None
@@ -89,25 +63,37 @@ class RedArrowPen(BasePen):
                 badness = self._getBadness(pointToCheck, myRect)
                 if badness >= self.ignoreBelow:
                     self.errors.append(RedArrowError(pointToCheck, "Extremum (badness %i units)" % badness, badness))
-                    self.numErrors += 1
             else:
                 self.errors.append(RedArrowError(pointToCheck, "Extremum"))
-                self.numErrors += 1
     
-    def _checkExtremumCubic(self, bcp1, bcp2, pt):
-        myRect = normRect((self._prev[0], self._prev[1], pt[0], pt[1]))
-        if not (pointInRect(bcp1, myRect) and pointInRect(bcp2, myRect)):
-            for p in getExtremaForCubic(self._prev, bcp1, bcp2, pt):
-                self.errors.append(RedArrowError((round(p[0]), round(p[1])), "Missing extremum"))
-                self.numErrors += 1
+    def _localExtremumTest(self, p1, p2, p3, p4):
+        myRect = normRect((p1[0], p1[1], p4[0], p4[1]))
+        if not (pointInRect(p2, myRect) and pointInRect(p3, myRect)):
+            points = getExtremaForCubic(p1, p2, p3, p4)
+            for p in points:
+                if p in self.errors:
+                    self.errors[p].extend([RedArrowError(p4, "Local extremum")])
+                else:
+                    self.errors[p] = [RedArrowError(p4, "Local extremum")]
     
-    def _checkSmooth(self, pointToCheck, refPoint):
+    def _globalExtremumTest(self, p1, p2, p3, p4):
+        myRect = CurrentGlyph().box
+        if not (pointInRect(p2, myRect) and pointInRect(p3, myRect)):
+            points = getExtremaForCubic(p1, p2, p3, p4, h=True, v=True)
+            for p in points:
+                if p in self.errors:
+                    self.errors[p].extend([RedArrowError(p4, "Bounding box extremum")])
+                else:
+                    self.errors[p] = [RedArrowError(p4, "Bounding box extremum")]
+    
+    def _checkSmooth(self, p, refPoint):
         if self._prev_ref is not None:
-            a = abs(getTriangleArea(self._prev_ref, refPoint, pointToCheck))
+            a = abs(getTriangleArea(self._prev_ref, refPoint, p))
             if 4000 > a > 200:
-                #print a, self._prev_ref, refPoint, pointToCheck
-                self.errors.append(RedArrowError(pointToCheck, "Smooth Connection (badness %i)" % a, a))
-                self.numErrors += 1
+                if p in self.errors:
+                    self.errors[p].extend([RedArrowError(p, "Smooth Connection (badness %i)" % a, a)])
+                else:
+                    self.errors[p] = [RedArrowError(p, "Smooth Connection (badness %i)" % a, a)]
     
     def _moveTo(self, pt):
         self._prev_ref = None
@@ -123,8 +109,7 @@ class RedArrowPen(BasePen):
         # but the offending handles. Superseded by self._checkExtremumCubic.
         #for bcp in [bcp1, bcp2]:
         #    self._checkBbox(bcp, pt)
-        self._checkExtremumCubic(bcp1, bcp2, pt)
-        self._checkSmooth(self._prev, bcp1)
+        self._curveTests(bcp1, bcp2, pt)
         self._prev_ref = bcp2
         self._prev = pt
     
@@ -138,3 +123,9 @@ class RedArrowPen(BasePen):
     
     def addComponent(self, baseGlyph, transformation):
         pass
+    
+    def _curveTests(self, bcp1, bcp2, pt):
+        self._globalExtremumTest(self._prev, bcp1, bcp2, pt)
+        self._localExtremumTest(self._prev, bcp1, bcp2, pt)
+        self._checkSmooth(self._prev, bcp1)
+        

@@ -4,6 +4,7 @@ from mojo.events import addObserver, removeObserver
 from mojo.UI import UpdateCurrentGlyphView
 from mojo.drawingTools import save, restore, fill, stroke, line, strokeWidth, rect, translate, text, fontSize, font
 #from time import time
+from string import strip
 
 import pen
 reload(pen)
@@ -14,7 +15,7 @@ class RedArrowUI(BaseWindowController):
         
         self.drawing = False
         self.showLabels = False
-        self.errors = []
+        self.errors = {}
         
         self.w = vanilla.FloatingWindow((140, 86), "RedArrow")
         y = 5
@@ -39,7 +40,7 @@ class RedArrowUI(BaseWindowController):
         self.w.open()
     
     
-    def updateOutlineCheck(self, sender=None):
+    def _updateOutlineCheck(self, sender=None):
         #start = time()
         g = CurrentGlyph()
         
@@ -56,14 +57,14 @@ class RedArrowUI(BaseWindowController):
         self.w.showGlyphStatusButton.enable(False)
         self.addObservers()
         self.drawing = True
-        self.updateOutlineCheck()
+        self._updateOutlineCheck()
         self.w.clearGlyphStatusButton.enable(True)
         
     
     def uncheckGlyphStatus(self, sender):
         self.w.clearGlyphStatusButton.enable(False)
         self.w.showGlyphStatusButton.enable(True)
-        self.errors = []
+        self.errors = {}
         self.removeObservers()
         self.drawing = False
         UpdateCurrentGlyphView()
@@ -78,10 +79,10 @@ class RedArrowUI(BaseWindowController):
     
     
     def addObservers(self):
-        addObserver(self, "drawArrows", "drawInactive")
-        addObserver(self, "drawArrows", "drawBackground")
-        addObserver(self, "updateOutlineCheck", "currentGlyphChanged")
-        addObserver(self, "updateOutlineCheck", "draw")
+        addObserver(self, "_drawArrows", "drawInactive")
+        addObserver(self, "_drawArrows", "drawBackground")
+        addObserver(self, "_updateOutlineCheck", "currentGlyphChanged")
+        addObserver(self, "_updateOutlineCheck", "draw")
     
     
     def removeObservers(self):
@@ -91,33 +92,35 @@ class RedArrowUI(BaseWindowController):
         removeObserver(self, "draw")
     
     
-    def drawArrow(self, position, kind, size, width):
+    def _drawArrow(self, position, kind, size, width):
         x, y = position
         save()
         translate(x, y)
         fill(0, 0.8, 0, 0.1)
         strokeWidth(width)
-        stroke(0.9, 0.1, 0, 1)
+        stroke(0.9, 0.1, 0, 0.85)
         line(-width/2, 0, size, 0)
         line(0, width/2, 0, -size)
         line(0, 0, size, -size)
         #rect(x-scale, y-scale, scale, scale)
         if self.showLabels:
-            fill(0, 0, 0, 1)
+            fill(0.4, 0.4, 0.4, 0.7)
             stroke(None)
             font("LucidaGrande")
             fontSize(int(round(size * 1.1)))
-            text(kind, (int(round(size * 1.5)), int(round(-1.05 * size))))
+            text(kind, (int(round(size * 1.8)), int(round(-size))))
         restore()
     
     
-    def drawArrows(self, notification):
+    def _drawArrows(self, notification):
         scale = notification["scale"]
         size = 10 * scale
         width = 3 * scale
-        #print scale
-        for e in self.errors:
-            self.drawArrow(e.position, e.kind, size, width)
+        for pos, errors in self.errors.iteritems():
+            message = ""
+            for e in errors:
+                message += "%s, " % e.kind
+            self._drawArrow(pos, message.strip(", "), size, width)
     
     
     def windowCloseCallback(self, sender):
