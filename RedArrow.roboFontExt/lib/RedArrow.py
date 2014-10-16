@@ -6,9 +6,9 @@ from mojo.drawingTools import save, restore, fill, stroke, line, strokeWidth, re
 #from time import time
 from string import strip
 
-import pen
-reload(pen)
-from pen import RedArrowPen
+import outlineTestPen
+reload(outlineTestPen)
+from outlineTestPen import OutlineTestPen
 
 class RedArrowUI(BaseWindowController):
     def __init__(self):
@@ -45,7 +45,7 @@ class RedArrowUI(BaseWindowController):
         g = CurrentGlyph()
         
         if g is not None:
-            myPen = RedArrowPen(CurrentFont(), True, 1)
+            myPen = OutlineTestPen(CurrentFont())
             g.draw(myPen)
             self.errors = myPen.errors
         UpdateCurrentGlyphView()
@@ -116,10 +116,17 @@ class RedArrowUI(BaseWindowController):
         scale = notification["scale"]
         size = 10 * scale
         width = 3 * scale
-        for pos, errors in self.errors.iteritems():
+        errors_by_position = {}
+        for e in self.errors:
+            if not e.kind == "Vector on closepath":
+                if e.position in errors_by_position:
+                    errors_by_position[e.position].extend([e.kind])
+                else:
+                    errors_by_position[e.position] = [e.kind]
+        for pos, errors in errors_by_position.iteritems():
             message = ""
             for e in errors:
-                message += "%s, " % e.kind
+                message += "%s, " % e
             self._drawArrow(pos, message.strip(", "), size, width)
     
     
