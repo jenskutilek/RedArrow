@@ -118,15 +118,18 @@ class RedArrowUI(BaseWindowController):
         width = 3 * scale
         errors_by_position = {}
         for e in self.errors:
-            if not e.kind == "Vector on closepath":
+            if not e.kind == "Vector on closepath": # FIXME
                 if e.position in errors_by_position:
-                    errors_by_position[e.position].extend([e.kind])
+                    errors_by_position[e.position].extend([e])
                 else:
-                    errors_by_position[e.position] = [e.kind]
+                    errors_by_position[e.position] = [e]
         for pos, errors in errors_by_position.iteritems():
             message = ""
             for e in errors:
-                message += "%s, " % e
+                if e.badness is None:
+                    message += "%s, " % (e.kind)
+                else:
+                    message += "%s (Severity %0.1f), " % (e.kind, e.badness)
             self._drawArrow(pos, message.strip(", "), size, width)
     
     
