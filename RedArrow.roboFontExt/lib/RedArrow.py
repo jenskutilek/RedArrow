@@ -119,11 +119,11 @@ class RedArrowUI(BaseWindowController):
         width = 3 * scale
         errors_by_position = {}
         for e in self.errors:
-            if not e.kind == "Vector on closepath": # FIXME
-                if e.position in errors_by_position:
-                    errors_by_position[e.position].extend([e])
-                else:
-                    errors_by_position[e.position] = [e]
+            #if not e.kind == "Vector on closepath": # FIXME
+            if e.position in errors_by_position:
+                errors_by_position[e.position].extend([e])
+            else:
+                errors_by_position[e.position] = [e]
         for pos, errors in errors_by_position.iteritems():
             message = ""
             for e in errors:
@@ -138,7 +138,7 @@ class RedArrowUI(BaseWindowController):
         if self.drawing:
             self.removeObservers()
         if roboFontVersion > "1.5.1":
-            removeRepresentationFactory("de.netzallee.RedArrow.report")
+            _unregisterFactory()
         UpdateCurrentGlyphView()
         super(RedArrowUI, self).windowCloseCallback(sender)
 
