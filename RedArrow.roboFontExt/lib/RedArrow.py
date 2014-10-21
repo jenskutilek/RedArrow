@@ -1,13 +1,17 @@
 import vanilla
 from defconAppKit.windows.baseWindow import BaseWindowController
 from mojo.events import addObserver, removeObserver
+from mojo.roboFont import version as roboFontVersion
 from mojo.UI import UpdateCurrentGlyphView
 from mojo.drawingTools import save, restore, fill, stroke, line, strokeWidth, rect, translate, text, fontSize, font
 #from time import time
 from string import strip
 
-import outlineTestPen
-reload(outlineTestPen)
+DEBUG = False
+
+if DEBUG:
+    import outlineTestPen
+    reload(outlineTestPen)
 from outlineTestPen import OutlineTestPen
 
 class RedArrowUI(BaseWindowController):
@@ -40,25 +44,12 @@ class RedArrowUI(BaseWindowController):
         self.w.open()
     
     
-    def _updateOutlineCheck(self, sender=None):
-        #start = time()
-        g = CurrentGlyph()
-        
-        if g is not None:
-            myPen = OutlineTestPen(CurrentFont())
-            g.draw(myPen)
-            self.errors = myPen.errors
-        UpdateCurrentGlyphView()
-        #stop = time()
-        #print "updateOutlineCheck in %0.2f ms." % ((stop-start) * 1000)
-    
-    
     def checkGlyphStatus(self, sender):
         self.w.showGlyphStatusButton.enable(False)
         self.addObservers()
         self.drawing = True
-        self._updateOutlineCheck()
         self.w.clearGlyphStatusButton.enable(True)
+        UpdateCurrentGlyphView()
         
     
     def uncheckGlyphStatus(self, sender):
@@ -81,15 +72,15 @@ class RedArrowUI(BaseWindowController):
     def addObservers(self):
         addObserver(self, "_drawArrows", "drawInactive")
         addObserver(self, "_drawArrows", "drawBackground")
-        addObserver(self, "_updateOutlineCheck", "currentGlyphChanged")
-        addObserver(self, "_updateOutlineCheck", "draw")
+        #addObserver(self, "_updateOutlineCheck", "currentGlyphChanged")
+        #addObserver(self, "_updateOutlineCheck", "draw")
     
     
     def removeObservers(self):
         removeObserver(self, "drawBackground")
         removeObserver(self, "drawInactive")
-        removeObserver(self, "currentGlyphChanged")
-        removeObserver(self, "draw")
+        #removeObserver(self, "currentGlyphChanged")
+        #removeObserver(self, "draw")
     
     
     def _drawArrow(self, position, kind, size, width):
@@ -113,6 +104,16 @@ class RedArrowUI(BaseWindowController):
     
     
     def _drawArrows(self, notification):
+        glyph = notification["glyph"]
+        if glyph is None:
+            return
+        font = glyph.getParent()
+        
+        if roboFontVersion > "1.5.1":
+            self.errors = glyph.getRepresentation("de.netzallee.RedArrow.report")
+        else:
+            self.errors = getGlyphReport(font, glyph)
+        
         scale = notification["scale"]
         size = 10 * scale
         width = 3 * scale
@@ -136,8 +137,52 @@ class RedArrowUI(BaseWindowController):
     def windowCloseCallback(self, sender):
         if self.drawing:
             self.removeObservers()
+        if roboFontVersion > "1.5.1":
+            removeRepresentationFactory("de.netzallee.RedArrow.report")
         UpdateCurrentGlyphView()
         super(RedArrowUI, self).windowCloseCallback(sender)
-    
 
-RedArrowUI()
+
+
+def getGlyphReport(font, glyph):
+    #start = time()
+    myPen = OutlineTestPen(font)
+    glyph.draw(myPen)
+    #stop = time()
+    #print "updateOutlineCheck in %0.2f ms." % ((stop-start) * 1000)
+    return myPen.errors
+
+
+def RedArrowReportFactory(glyph, font):
+    glyph = RGlyph(glyph)
+    font = glyph.getParent()
+    return getGlyphReport(font, glyph)
+
+
+def _registerFactory():
+    # From https://github.com/typesupply/glyph-nanny/blob/master/Glyph%20Nanny.roboFontExt/lib/glyphNanny.py
+    # always register if debugging
+    # otherwise only register if it isn't registered
+    from defcon import addRepresentationFactory, removeRepresentationFactory
+    from defcon.objects import glyph as _xxxHackGlyph
+    if DEBUG:
+        if "de.netzallee.RedArrow.report" in _xxxHackGlyph._representationFactories:
+            for font in AllFonts():
+                for glyph in font:
+                    glyph.naked().destroyAllRepresentations()
+            removeRepresentationFactory("de.netzallee.RedArrow.report")
+        addRepresentationFactory("de.netzallee.RedArrow.report", RedArrowReportFactory)
+    else:
+        if "de.netzallee.RedArrow.report" not in _xxxHackGlyph._representationFactories:
+            addRepresentationFactory("de.netzallee.RedArrow.report", RedArrowReportFactory)
+
+
+def _unregisterFactory():
+    from defcon import removeRepresentationFactory
+    removeRepresentationFactory("de.netzallee.RedArrow.report")
+
+
+if __name__ == "__main__":
+    if roboFontVersion > "1.5.1":
+        _registerFactory()
+    RedArrowUI()
