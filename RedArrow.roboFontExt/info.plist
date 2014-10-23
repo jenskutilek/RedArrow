@@ -12,6 +12,14 @@
 			<key>shortKey</key>
 			<string></string>
 		</dict>
+		<dict>
+			<key>path</key>
+			<string>Mark glyphs with errors.py</string>
+			<key>preferredName</key>
+			<string>Mark glyphs with errors</string>
+			<key>shortKey</key>
+			<string></string>
+		</dict>
 	</array>
 	<key>developer</key>
 	<string>Netzallee</string>
@@ -30,9 +38,9 @@
 	<key>requiresVersionMinor</key>
 	<string>5</string>
 	<key>timeStamp</key>
-	<real>1400521878.020776</real>
+	<real>1414054637.020776</real>
 	<key>version</key>
-	<string>0.1</string>
+	<string>0.2</string>
 	<key>repository</key>
 	<string>jenskutilek/RedArrow</string>
 	<key>extensionPath</key>
