@@ -11,6 +11,7 @@ options = {
 }
 
 def run_test(font, glyphnames):
+    selection = []
     for n in glyphnames:
         g = font[n]
         otp = OutlineTestPen(CurrentFont(), options)
@@ -18,8 +19,10 @@ def run_test(font, glyphnames):
         if otp.errors:
             if len(otp.errors) > 0:
                 g.mark = (1, 0.65, 0.6, 1)
+            selection.append(g.name)
             #for e in otp.errors:
             #    print e
+    font.selection = selection
 
 font = CurrentFont()
 glyphnames = CurrentFont().keys()
