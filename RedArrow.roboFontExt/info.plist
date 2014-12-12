@@ -14,9 +14,9 @@
 		</dict>
 		<dict>
 			<key>path</key>
-			<string>Mark glyphs with errors.py</string>
+			<string>Select Glyphs With Errors.py</string>
 			<key>preferredName</key>
-			<string>Mark glyphs with errors</string>
+			<string>Select Glyphs With Errors</string>
 			<key>shortKey</key>
 			<string></string>
 		</dict>
@@ -38,9 +38,9 @@
 	<key>requiresVersionMinor</key>
 	<string>5</string>
 	<key>timeStamp</key>
-	<real>1414054637.020776</real>
+	<real>1418393204.020776</real>
 	<key>version</key>
-	<string>0.2</string>
+	<string>0.3</string>
 	<key>repository</key>
 	<string>jenskutilek/RedArrow</string>
 	<key>extensionPath</key>
