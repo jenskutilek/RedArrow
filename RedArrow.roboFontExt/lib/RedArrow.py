@@ -127,7 +127,7 @@ class RedArrowUI(BaseWindowController):
         for pos, errors in errors_by_position.iteritems():
             message = ""
             for e in errors:
-                if e.badness is None:
+                if e.badness is None or not DEBUG:
                     message += "%s, " % (e.kind)
                 else:
                     message += "%s (Severity %0.1f), " % (e.kind, e.badness)
