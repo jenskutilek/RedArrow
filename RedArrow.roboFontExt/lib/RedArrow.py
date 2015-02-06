@@ -84,7 +84,11 @@ class RedArrowUI(BaseWindowController):
     
     
     def _drawArrow(self, position, kind, size, width):
-        x, y = position
+        if position is not None:
+            x, y = position
+        else:
+            x = 0
+            y = 0
         save()
         translate(x, y)
         fill(0, 0.8, 0, 0.1)
