@@ -14,6 +14,14 @@
 		</dict>
 		<dict>
 			<key>path</key>
+			<string>RedArrowErrorFilter.py</string>
+			<key>preferredName</key>
+			<string>Red Arrow Error Filter</string>
+			<key>shortKey</key>
+			<string></string>
+		</dict>
+		<dict>
+			<key>path</key>
 			<string>Select Glyphs With Errors.py</string>
 			<key>preferredName</key>
 			<string>Select Glyphs With Errors</string>
@@ -38,9 +46,9 @@
 	<key>requiresVersionMinor</key>
 	<string>6</string>
 	<key>timeStamp</key>
-	<real>1424194892.0</real>
+	<real>1442321874.0</real>
 	<key>version</key>
-	<string>0.3.2</string>
+	<string>0.3.3</string>
 	<key>com.robofontmechanic.Mechanic</key>
 	<dict>
 		<key>repository</key>
