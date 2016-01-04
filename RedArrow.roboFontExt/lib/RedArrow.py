@@ -7,12 +7,24 @@ from mojo.drawingTools import save, restore, fill, stroke, line, strokeWidth, re
 #from time import time
 from string import strip
 
-DEBUG = False
+DEBUG = True
 
 if DEBUG:
     import outlineTestPen
     reload(outlineTestPen)
 from outlineTestPen import OutlineTestPen
+
+
+options = {
+    "extremum_calculate_badness": True,
+    "fractional_ignore_point_zero": True,
+    
+    "extremum_ignore_badness_below": 1,
+    "smooth_connection_max_distance": 4,
+    "collinear_vectors_max_distance": 2,
+    "semi_hv_vectors_min_distance": 30,
+    "zero_handles_max_distance": 0,
+}
 
 class RedArrowUI(BaseWindowController):
     def __init__(self):
@@ -21,43 +33,99 @@ class RedArrowUI(BaseWindowController):
         self.showLabels = False
         self.errors = {}
         
-        self.w = vanilla.FloatingWindow((140, 86), "RedArrow")
+        self.w = vanilla.FloatingWindow((240, 298), "RedArrow")
+        x0 = 25
+        x1 = 150
         y = 5
-        self.w.showGlyphStatusButton = vanilla.Button((10, y , -10, 25), "Show red arrows",
+        self.w.showGlyphStatusButton = vanilla.CheckBox((10, y , -10, 25), "Show Red Arrows",
             callback=self.checkGlyphStatus,
             sizeStyle="small",
         )
-        y += 26
-        self.w.clearGlyphStatusButton = vanilla.Button((10, y , -10, 25), "Clear red arrows",
-            callback=self.uncheckGlyphStatus,
-            sizeStyle="small",
-        )
         y += 28
-        self.w.drawLabels = vanilla.CheckBox((10, y, -10, 25), "Show labels",
+        self.w.drawLabels = vanilla.CheckBox((10, y, -10, 25), "Show Labels",
             callback=self.toggleShowLabels,
             sizeStyle="small",
         )
-                
-        self.w.clearGlyphStatusButton.enable(False)
-        #self.w.showGlyphStatusButton.enable(True)
+        y += 28
+        self.w.optionsExtremumCalculateBadness = vanilla.CheckBox((10, y, -10, 25), "Calculate Extremum Distance",
+            value=options.get("extremum_calculate_badness"),
+            callback=self.setExtremumCalculateBadness,
+            sizeStyle="small",
+        )
+        y += 28
+        self.w.optionsFractionalIgnorePointZero = vanilla.CheckBox((10, y, -10, 25), "Ignore .0 Fractional Coordinates",
+            value=options.get("fractional_ignore_point_zero"),
+            callback=self.setFractionalIgnorePointZero,
+            sizeStyle="small",
+        )
+        
+        y += 42
+        self.w.optionsThresholdLabel = vanilla.TextBox((8, y, -10, 25), "Detection Threshold Values (Font Units):",
+            sizeStyle="small",
+        )
+        
+        y += 28
+        self.w.optionsExtremumToleranceLabel = vanilla.TextBox((x0, y, 120, 25), "Extremum Points",
+            sizeStyle="small",
+        )
+        self.w.optionsExtremumTolerance = vanilla.EditText((x1, y-3, 32, 21),
+            options.get("extremum_ignore_badness_below"),
+            callback=self.setExtremumTolerance,
+            sizeStyle="small",
+        )
+        
+        y += 28
+        self.w.optionsZeroHandlesToleranceLabel = vanilla.TextBox((x0, y, x1-x0, 25), "Zero Handles",
+            sizeStyle="small",
+        )
+        self.w.optionsZeroHandlesTolerance = vanilla.EditText((x1, y-3, 32, 21),
+            options.get("zero_handles_max_distance"),
+            callback=self.setZeroHandlesTolerance,
+            sizeStyle="small",
+        )
+        
+        y += 28
+        self.w.optionsSmoothConnectionMaxDistLabel = vanilla.TextBox((x0, y, x1-x0, 25), "Smooth Connections",
+            sizeStyle="small",
+        )
+        self.w.optionsSmoothConnectionMaxDist = vanilla.EditText((x1, y-3, 32, 21),
+            options.get("smooth_connection_max_distance"),
+            callback=self.setSmoothConnectionMaxDist,
+            sizeStyle="small",
+        )
+        
+        y += 28
+        self.w.optionsCollinearVectorsMaxDistLabel = vanilla.TextBox((x0, y, x1-x0, 25), "Collinear Lines",
+            sizeStyle="small",
+        )
+        self.w.optionsCollinearVectorsMaxDist = vanilla.EditText((x1, y-3, 32, 21),
+            options.get("collinear_vectors_max_distance"),
+            callback=self.setCollinearVectorsMaxDist,
+            sizeStyle="small",
+        )
+               
+        y += 28
+        self.w.optionsSemiHVVectorsMinDistLabel = vanilla.TextBox((x0, y, x1-x0, 25), "Semi-hor./-vert. Lines",
+            sizeStyle="small",
+        )
+        self.w.optionsSemiHVVectorsMinDist = vanilla.EditText((x1, y-3, 32, 21),
+            options.get("semi_hv_vectors_min_distance"),
+            callback=self.setSemiHVVectorsMinDist,
+            sizeStyle="small",
+        )
         self.setUpBaseWindowBehavior()
         self.w.open()
     
     
     def checkGlyphStatus(self, sender):
-        self.w.showGlyphStatusButton.enable(False)
-        self.addObservers()
-        self.drawing = True
-        self.w.clearGlyphStatusButton.enable(True)
-        UpdateCurrentGlyphView()
-        
-    
-    def uncheckGlyphStatus(self, sender):
-        self.w.clearGlyphStatusButton.enable(False)
-        self.w.showGlyphStatusButton.enable(True)
-        self.errors = {}
-        self.removeObservers()
-        self.drawing = False
+        active = sender.get()
+        if active:
+            self.addObservers()
+            self.drawing = True
+        else:
+            self.errors = {}
+            self.removeObservers()
+            self.drawing = False
         UpdateCurrentGlyphView()
     
     
@@ -68,6 +136,34 @@ class RedArrowUI(BaseWindowController):
             self.showLabels = True
         UpdateCurrentGlyphView()
     
+    
+    def setExtremumCalculateBadness(self, sender):
+        options["extremum_calculate_badness"] = sender.get()
+        UpdateCurrentGlyphView()
+    
+    def setFractionalIgnorePointZero(self, sender):
+        options["fractional_ignore_point_zero"] = sender.get()
+        UpdateCurrentGlyphView()
+    
+    def setExtremumTolerance(self, sender):
+        options["extremum_ignore_badness_below"] = int(sender.get())
+        UpdateCurrentGlyphView()
+    
+    def setZeroHandlesTolerance(self, sender):
+        options["zero_handles_max_distance"] = int(sender.get())
+        UpdateCurrentGlyphView()
+    
+    def setSmoothConnectionMaxDist(self, sender):
+        options["smooth_connection_max_distance"] = int(sender.get())
+        UpdateCurrentGlyphView()
+    
+    def setCollinearVectorsMaxDist(self, sender):
+        options["collinear_vectors_max_distance"] = int(sender.get())
+        UpdateCurrentGlyphView()
+    
+    def setSemiHVVectorsMinDist(self, sender):
+        options["semi_hv_vectors_min_distance"] = int(sender.get())
+        UpdateCurrentGlyphView()
     
     def addObservers(self):
         addObserver(self, "_drawArrows", "drawInactive")
@@ -148,9 +244,9 @@ class RedArrowUI(BaseWindowController):
 
 
 
-def getGlyphReport(font, glyph):
+def getGlyphReport(font, glyph, options):
     #start = time()
-    myPen = OutlineTestPen(font)
+    myPen = OutlineTestPen(font, options)
     glyph.draw(myPen)
     #stop = time()
     #print "updateOutlineCheck in %0.2f ms." % ((stop-start) * 1000)
@@ -160,7 +256,7 @@ def getGlyphReport(font, glyph):
 def RedArrowReportFactory(glyph, font):
     glyph = RGlyph(glyph)
     font = glyph.getParent()
-    return getGlyphReport(font, glyph)
+    return getGlyphReport(font, glyph, options)
 
 
 def _registerFactory():
