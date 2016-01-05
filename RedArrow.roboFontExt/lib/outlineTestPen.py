@@ -84,6 +84,7 @@ class OutlineTestPen(BasePen):
 			"test_semi_hv",
 			"test_closepath",
 			"test_zero_handles",
+			"test_bbox_handles",
 		]
 		
 		# Curve type detection

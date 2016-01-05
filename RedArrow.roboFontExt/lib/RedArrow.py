@@ -18,6 +18,7 @@ from outlineTestPen import OutlineTestPen
 options = {
     "extremum_calculate_badness": True,
     "fractional_ignore_point_zero": True,
+    "show_bbox": True,
     
     "extremum_ignore_badness_below": 1,
     "smooth_connection_max_distance": 4,
@@ -47,9 +48,9 @@ class RedArrowUI(BaseWindowController):
             sizeStyle="small",
         )
         y += 28
-        self.w.optionsExtremumCalculateBadness = vanilla.CheckBox((10, y, -10, 25), "Calculate Extremum Distance",
-            value=options.get("extremum_calculate_badness"),
-            callback=self.setExtremumCalculateBadness,
+        self.w.optionsShowBoundingBox = vanilla.CheckBox((10, y, -10, 25), "Show Bounding Box",
+            value=options.get("show_bbox"),
+            callback=self.setShowBoundingBox,
             sizeStyle="small",
         )
         y += 28
@@ -137,8 +138,8 @@ class RedArrowUI(BaseWindowController):
         UpdateCurrentGlyphView()
     
     
-    def setExtremumCalculateBadness(self, sender):
-        options["extremum_calculate_badness"] = sender.get()
+    def setShowBoundingBox(self, sender):
+        options["show_bbox"] = sender.get()
         UpdateCurrentGlyphView()
     
     def setFractionalIgnorePointZero(self, sender):
@@ -232,6 +233,17 @@ class RedArrowUI(BaseWindowController):
                 else:
                     message += "%s (Severity %0.1f), " % (e.kind, e.badness)
             self._drawArrow(pos, message.strip(", "), size, width)
+        if options.get("show_bbox"):
+            box = glyph.box
+            if box is not None:
+                save()
+                fill(None)
+                strokeWidth(0.5 * scale)
+                stroke(1, 0, 0, 0.5)
+                x, y, w, h = box
+                rect(x, y, w-x, h-y)
+                restore()
+            
     
     
     def windowCloseCallback(self, sender):
