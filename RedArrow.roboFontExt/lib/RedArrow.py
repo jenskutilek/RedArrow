@@ -20,7 +20,7 @@ options = {
     "fractional_ignore_point_zero": True,
     "show_bbox": True,
     
-    "extremum_ignore_badness_below": 1,
+    "extremum_ignore_badness_below": 0,
     "smooth_connection_max_distance": 4,
     "collinear_vectors_max_distance": 2,
     "semi_hv_vectors_min_distance": 30,
@@ -61,7 +61,7 @@ class RedArrowUI(BaseWindowController):
         )
         
         y += 42
-        self.w.optionsThresholdLabel = vanilla.TextBox((8, y, -10, 25), "Detection Threshold Values (Font Units):",
+        self.w.optionsThresholdLabel = vanilla.TextBox((8, y, -10, 25), u"Detection Threshold Values (\u2030 em):",
             sizeStyle="small",
         )
         
