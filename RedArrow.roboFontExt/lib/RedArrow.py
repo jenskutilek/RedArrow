@@ -32,6 +32,7 @@ class RedArrowUI(BaseWindowController):
     def __init__(self):
         
         self.drawing = False
+        self.fixer = None
         self.showLabels = False
         self.errors = {}
         
@@ -43,6 +44,12 @@ class RedArrowUI(BaseWindowController):
             callback=self.checkGlyphStatus,
             sizeStyle="small",
         )
+        if tool_mode:
+            y += 28
+            self.w.fixSelectedButton = vanilla.Button((10, y , -10, 25), "Fix Selected",
+                callback=self._fixSelected,
+                sizeStyle="small",
+            )
         y += 28
         self.w.drawLabels = vanilla.CheckBox((10, y, -10, 25), "Show Labels",
             callback=self.toggleShowLabels,
@@ -180,6 +187,9 @@ class RedArrowUI(BaseWindowController):
         #removeObserver(self, "currentGlyphChanged")
         #removeObserver(self, "draw")
     
+    def _fixSelected(self, sender=None):
+        if self.fixer is not None:
+            self.fixer.fixSelected()
     
     def _drawArrow(self, position, kind, size, width):
         if position is not None:
