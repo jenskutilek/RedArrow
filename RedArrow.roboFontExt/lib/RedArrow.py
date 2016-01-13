@@ -297,4 +297,4 @@ def _unregisterFactory():
 if __name__ == "__main__":
     if roboFontVersion > "1.5.1":
         _registerFactory()
-    RedArrowUI()
+    OpenWindow(RedArrowUI)
