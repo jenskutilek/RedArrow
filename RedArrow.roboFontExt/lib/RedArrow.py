@@ -14,6 +14,7 @@ if DEBUG:
     reload(outlineTestPen)
 from outlineTestPen import OutlineTestPen
 
+tool_mode = True
 
 options = {
     "extremum_calculate_badness": True,
@@ -34,7 +35,7 @@ class RedArrowUI(BaseWindowController):
         self.showLabels = False
         self.errors = {}
         
-        self.w = vanilla.FloatingWindow((240, 298), "RedArrow")
+        self.w = vanilla.FloatingWindow((240, 298), "RedArrow", closable = not(tool_mode))
         x0 = 25
         x1 = 150
         y = 5
@@ -297,4 +298,5 @@ def _unregisterFactory():
 if __name__ == "__main__":
     if roboFontVersion > "1.5.1":
         _registerFactory()
+    tool_mode = False
     OpenWindow(RedArrowUI)
