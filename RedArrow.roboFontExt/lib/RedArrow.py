@@ -272,8 +272,8 @@ class RedArrowUI(BaseWindowController):
     def windowCloseCallback(self, sender):
         if self.drawing:
             self.removeObservers()
-        if roboFontVersion > "1.5.1":
-            _unregisterFactory()
+            if roboFontVersion > "1.5.1":
+                _unregisterFactory()
         UpdateCurrentGlyphView()
         super(RedArrowUI, self).windowCloseCallback(sender)
 
@@ -314,11 +314,12 @@ def _registerFactory():
 
 def _unregisterFactory():
     from defcon import removeRepresentationFactory
-    removeRepresentationFactory("de.netzallee.RedArrow.report")
+    try:
+        removeRepresentationFactory("de.netzallee.RedArrow.report")
+    except:
+        pass
 
 
 if __name__ == "__main__":
-    if roboFontVersion > "1.5.1":
-        _registerFactory()
     tool_mode = False
     OpenWindow(RedArrowUI)
