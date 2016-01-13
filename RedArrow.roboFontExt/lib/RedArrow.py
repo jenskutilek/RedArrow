@@ -122,6 +122,8 @@ class RedArrowUI(BaseWindowController):
             callback=self.setSemiHVVectorsMinDist,
             sizeStyle="small",
         )
+        self.w.showGlyphStatusButton.set(True)
+        self.showRedArrows()
         self.setUpBaseWindowBehavior()
         self.w.open()
     
@@ -129,14 +131,24 @@ class RedArrowUI(BaseWindowController):
     def checkGlyphStatus(self, sender):
         active = sender.get()
         if active:
-            self.addObservers()
-            self.drawing = True
+            self.showRedArrows()
         else:
-            self.errors = {}
-            self.removeObservers()
-            self.drawing = False
+            self.hideRedArrows()
+    
+    def showRedArrows(self):
+        if roboFontVersion > "1.5.1":
+            _registerFactory()
+        self.addObservers()
+        self.drawing = True
         UpdateCurrentGlyphView()
     
+    def hideRedArrows(self):
+        self.errors = {}
+        self.removeObservers()
+        if roboFontVersion > "1.5.1":
+            _unregisterFactory()
+        self.drawing = False
+        UpdateCurrentGlyphView()
     
     def toggleShowLabels(self, sender):
         if self.showLabels:
