@@ -13,7 +13,7 @@ if DEBUG:
 from RedArrow import RedArrowUI
 
 
-iconpath = join(dirname(__file__), "RedArrow.pdf")
+iconpath = join(dirname(__file__), "RedArrowFixer.pdf")
 
 if isfile(iconpath):
     toolbarIcon = NSImage.alloc().initByReferencingFile_(iconpath)
