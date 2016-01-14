@@ -4,7 +4,7 @@ from fontTools.misc.arrayTools import pointInRect
 from lib.tools import bezierTools # for single point click selection
 from lib.tools.defaults import getDefaultColor # for drawing the selection marquee
 from mojo.events import BaseEventTool, installTool
-from mojo.drawingTools import oval, restore, save
+from mojo.drawingTools import fill, oval, restore, save, stroke
 
 DEBUG = True
 
@@ -42,8 +42,10 @@ class ErrorSelection(object):
             self.errors.append(p)
     
     def draw(self, scale):
-        size = 10 * scale
+        size = 20 * scale
         save()
+        fill(0.2, 0.5, 0.35, 0.3)
+        stroke(None)
         #for contour in self.errors.keys():
         #    for p in contour:
         #        oval(p[0]-5, p[1]-5, 10, 10)
