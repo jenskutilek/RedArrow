@@ -4,6 +4,7 @@ from fontTools.misc.arrayTools import pointInRect
 from lib.tools import bezierTools # for single point click selection
 from lib.tools.defaults import getDefaultColor # for drawing the selection marquee
 from mojo.events import BaseEventTool, installTool
+from mojo.drawingTools import oval, restore, save
 
 DEBUG = True
 
@@ -21,9 +22,39 @@ else:
     toolbarIcon = None
     print "Warning: Toolbar icon not found: <%s>" % iconpath
 
+class ErrorSelection(object):
+    def __init__(self):
+        self.errors = []
+    
+    def __repr__(self):
+        return str(self.errors)
+    
+    def resetSelection(self):
+        self.errors = []
+    
+    def addError(self, p, shiftDown):
+        #if contour in self.errors:
+        #    if not p in self.errors[contour]:
+        #        self.errors.append((p, contour))
+        #else:
+        #    self.errors[contour] = [p]
+        if not p in self.errors:
+            self.errors.append(p)
+    
+    def draw(self, scale):
+        size = 10 * scale
+        save()
+        #for contour in self.errors.keys():
+        #    for p in contour:
+        #        oval(p[0]-5, p[1]-5, 10, 10)
+        for p in self.errors:
+            oval(p[0]-size/2, p[1]-size/2, size, size)
+        restore()
+
 class RedArrowFixerTool(BaseEventTool):
     
     def setup(self):
+        self.errorSelection = ErrorSelection()
         self.pStart = None
         self.pEnd = None
         self._selectedMouseDownPoint = None
@@ -62,19 +93,15 @@ class RedArrowFixerTool(BaseEventTool):
     def _getSelectedPoints(self):
         if self.pStart and self.pEnd:
             box = self._normalizeBox(self.pStart, self.pEnd)
-            for contour in self._glyph:
-                for p in contour.onCurvePoints:
-                    if pointInRect((p.x, p.y), box):
-                        self.selection.addPoint(p, self.shiftDown, contour=contour)
-                        self._selectedMouseDownPoint = (p.x, p.y)
-                for anchor in self._glyph.anchors:
-                    if pointInRect((anchor.x, anchor.y), box):
-                        self.selection.addAnchor(anchor, self.shiftDown)
-                        self._selectedMouseDownPoint = (anchor.x, anchor.y)
+            for error in self.ui.errors:
+                p = error.position
+                if pointInRect(p, box):
+                    self.errorSelection.addError(p, self.shiftDown)
+                    self._selectedMouseDownPoint = p
     
     def mouseDown(self, point, clickCount):
         if not(self.shiftDown):
-            self.selection.resetSelection()
+            self.errorSelection.resetSelection()
         if clickCount > 1:
             #self._newAnchor(point)
             pass
@@ -82,21 +109,17 @@ class RedArrowFixerTool(BaseEventTool):
             self.pStart = point
             self.pEnd = None
             s = self._view.getGlyphViewOnCurvePointsSize(minSize=7)
-            for contour in self._glyph:
-                for p in contour.onCurvePoints:
-                    if bezierTools.distanceFromPointToPoint(p, point) < s:
-                        self.selection.addPoint(p, self.shiftDown, contour=contour)
-                        self._selectedMouseDownPoint = (p.x, p.y)
-                        return
-                for anchor in self._glyph.anchors:
-                    if bezierTools.distanceFromPointToPoint(anchor, point) < s:
-                        self.selection.addAnchor(anchor, self.shiftDown)
-                        self._selectedMouseDownPoint = (anchor.x, anchor.y)
-                        return
+            for error in self.ui.errors:
+                p = error.position
+                if bezierTools.distanceFromPointToPoint(p, point) < s:
+                    self.errorSelection.addError(p, self.shiftDown)
+                    self._selectedMouseDownPoint = p
+                    break
     
     def mouseUp(self, point):
         self.pEnd = point
         self._getSelectedPoints()
+        #print self.errorSelection
         self.pStart = None
         self.pEnd = None
         self._selectedMouseDownPoint = None
@@ -115,6 +138,9 @@ class RedArrowFixerTool(BaseEventTool):
                 path.fill()
             return
         self.drawSelection(scale)
+    
+    def drawSelection(self, scale):
+        self.errorSelection.draw(scale)
         
 installTool(RedArrowFixerTool())
 print "Red Arrow Fixer installed in tool bar."
