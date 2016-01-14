@@ -20,7 +20,7 @@ if isfile(iconpath):
     toolbarIcon = NSImage.alloc().initByReferencingFile_(iconpath)
 else:
     toolbarIcon = None
-    print "Warning: Toolbar icon not found: <%s>" % iconpath
+    print "Warning: Toolbar icon not found at path: '%s'" % iconpath
 
 class ErrorSelection(object):
     def __init__(self):
