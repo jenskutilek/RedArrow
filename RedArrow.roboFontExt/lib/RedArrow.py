@@ -2,6 +2,7 @@ import vanilla
 from defconAppKit.windows.baseWindow import BaseWindowController
 from mojo.events import addObserver, removeObserver
 from mojo.roboFont import version as roboFontVersion
+from mojo.roboFont import RGlyph
 from mojo.UI import UpdateCurrentGlyphView
 from mojo.drawingTools import save, restore, fill, stroke, line, strokeWidth, rect, translate, text, fontSize, font
 #from time import time
