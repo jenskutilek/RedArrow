@@ -53,6 +53,8 @@
 	<dict>
 		<key>repository</key>
 		<string>jenskutilek/RedArrow</string>
+		<key>summary</key>
+		<string>Mark technical outline errors in your glyphs.</string>
 	</dict>
 </dict>
 </plist>
