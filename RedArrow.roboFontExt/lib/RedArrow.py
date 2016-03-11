@@ -8,7 +8,7 @@ from mojo.drawingTools import save, restore, fill, stroke, line, strokeWidth, re
 #from time import time
 from string import strip
 
-DEBUG = True
+DEBUG = False
 
 if DEBUG:
     import outlineTestPen
