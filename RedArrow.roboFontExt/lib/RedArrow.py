@@ -235,7 +235,7 @@ class RedArrowUI(BaseWindowController):
         font = glyph.getParent()
         
         if roboFontVersion > "1.5.1":
-            self.errors = glyph.getRepresentation("de.netzallee.RedArrow.report")
+            self.errors = glyph.getRepresentation("de.kutilek.RedArrow.report")
         else:
             self.errors = getGlyphReport(font, glyph)
         
@@ -302,21 +302,21 @@ def _registerFactory():
     from defcon import addRepresentationFactory, removeRepresentationFactory
     from defcon.objects import glyph as _xxxHackGlyph
     if DEBUG:
-        if "de.netzallee.RedArrow.report" in _xxxHackGlyph._representationFactories:
+        if "de.kutilek.RedArrow.report" in _xxxHackGlyph._representationFactories:
             for font in AllFonts():
                 for glyph in font:
                     glyph.naked().destroyAllRepresentations()
-            removeRepresentationFactory("de.netzallee.RedArrow.report")
-        addRepresentationFactory("de.netzallee.RedArrow.report", RedArrowReportFactory)
+            removeRepresentationFactory("de.kutilek.RedArrow.report")
+        addRepresentationFactory("de.kutilek.RedArrow.report", RedArrowReportFactory)
     else:
-        if "de.netzallee.RedArrow.report" not in _xxxHackGlyph._representationFactories:
-            addRepresentationFactory("de.netzallee.RedArrow.report", RedArrowReportFactory)
+        if "de.kutilek.RedArrow.report" not in _xxxHackGlyph._representationFactories:
+            addRepresentationFactory("de.kutilek.RedArrow.report", RedArrowReportFactory)
 
 
 def _unregisterFactory():
     from defcon import removeRepresentationFactory
     try:
-        removeRepresentationFactory("de.netzallee.RedArrow.report")
+        removeRepresentationFactory("de.kutilek.RedArrow.report")
     except:
         pass
 
