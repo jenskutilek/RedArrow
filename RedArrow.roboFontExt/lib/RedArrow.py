@@ -283,7 +283,7 @@ class RedArrowUI(BaseWindowController):
 def getGlyphReport(font, glyph, options):
     #start = time()
     myPen = OutlineTestPen(font, options)
-    glyph.draw(myPen)
+    glyph.drawPoints(myPen)
     #stop = time()
     #print "updateOutlineCheck in %0.2f ms." % ((stop-start) * 1000)
     return myPen.errors
