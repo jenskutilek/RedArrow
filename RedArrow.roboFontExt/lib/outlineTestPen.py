@@ -310,6 +310,7 @@ class OutlineTestPen(BasePointToSegmentPen):
 		))
 	
 	def _checkFractionalTransformation(self, baseGlyph, transformation):
+		#bbox = self.glyphSet.glyphs[baseGlyph].bbox
 		if self.fractional_ignore_point_zero:
 			for p in transformation:
 				if round(p) != p:
