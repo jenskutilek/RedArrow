@@ -481,10 +481,8 @@ class OutlineTestPen(BasePointToSegmentPen):
 				self.current_smooth = points[1][1]
 			else:
 				pass
-	
+		
 		#self._runClosePathTests()
-		#self._prev_type = None
-		#self._should_test_collinear = False
 
 
 
