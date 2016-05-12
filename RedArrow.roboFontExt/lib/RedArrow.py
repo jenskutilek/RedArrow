@@ -4,7 +4,7 @@ from mojo.events import addObserver, removeObserver
 from mojo.roboFont import version as roboFontVersion
 from mojo.roboFont import RGlyph
 from mojo.UI import UpdateCurrentGlyphView
-from mojo.drawingTools import save, restore, fill, stroke, line, strokeWidth, rect, translate, text, fontSize, font
+from mojo.drawingTools import save, restore, fill, stroke, line, strokeWidth, rect, translate, text, fontSize, font, lineJoin, lineCap
 #from time import time
 from string import strip
 
@@ -190,6 +190,8 @@ class RedArrowUI(BaseWindowController):
     def addObservers(self):
         addObserver(self, "_drawArrows", "drawInactive")
         addObserver(self, "_drawArrows", "drawBackground")
+        if roboFontVersion >= "1.7":
+            addObserver(self, "_drawGlyphCellArrows", "glyphCellDrawBackground")
         #addObserver(self, "_updateOutlineCheck", "currentGlyphChanged")
         #addObserver(self, "_updateOutlineCheck", "draw")
     
@@ -197,6 +199,8 @@ class RedArrowUI(BaseWindowController):
     def removeObservers(self):
         removeObserver(self, "drawBackground")
         removeObserver(self, "drawInactive")
+        if roboFontVersion >= "1.7":
+            removeObserver(self, "glyphCellDrawBackground")
         #removeObserver(self, "currentGlyphChanged")
         #removeObserver(self, "draw")
     
@@ -214,7 +218,7 @@ class RedArrowUI(BaseWindowController):
         translate(x, y)
         fill(0, 0.8, 0, 0.1)
         strokeWidth(width)
-        stroke(0.9, 0.1, 0, 0.85)
+        stroke(0.9, 0.2, 0.1, 1)
         line(-width/2, 0, size, 0)
         line(0, width/2, 0, -size)
         line(0, 0, size, -size)
@@ -267,7 +271,35 @@ class RedArrowUI(BaseWindowController):
                 x, y, w, h = box
                 rect(x, y, w-x, h-y)
                 restore()
-            
+    
+    def _drawGlyphCellArrow(self, num_errors):
+        x = 3
+        y = 3
+        width = 2
+        size = 7
+        save()
+        translate(4, 4)
+        
+        fill(0.9, 0.4, 0.3, 1)
+        rect(-1, -1, size+1, size+1)
+        
+        lineJoin("round")
+        lineCap("butt") # butt, square, round
+        strokeWidth(width)
+        stroke(1, 1, 1)
+        line(-width/2, 0, size, 0)
+        line(0, -width/2, 0, size)
+        line(width/2, width/2, size-0.5, size-0.5)
+        
+        restore()
+    
+    def _drawGlyphCellArrows(self, notification):
+        glyph = notification["glyph"]
+        if glyph is None:
+            return
+        num_errors = len(glyph.getRepresentation("de.kutilek.RedArrow.report"))
+        if num_errors > 0:
+            self._drawGlyphCellArrow(num_errors)
     
     
     def windowCloseCallback(self, sender):
