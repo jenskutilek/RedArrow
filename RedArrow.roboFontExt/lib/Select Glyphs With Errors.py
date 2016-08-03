@@ -1,6 +1,7 @@
-import outlineTestPen
-reload(outlineTestPen)
+#import outlineTestPen
+#reload(outlineTestPen)
 from outlineTestPen import OutlineTestPen
+from lib.tools.defaults import getDefault
 
 options = {
     "extremum_calculate_badness": True,
@@ -8,6 +9,7 @@ options = {
     "smooth_connection_max_distance": 4,
     "fractional_ignore_point_zero": True,
     "collinear_vectors_max_distance": 2,
+    "grid_length": getDefault('glyphViewRoundValues'),
 }
 
 def run_test(font, glyphnames):

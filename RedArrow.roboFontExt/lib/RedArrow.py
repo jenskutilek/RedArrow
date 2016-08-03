@@ -1,5 +1,6 @@
 import vanilla
 from defconAppKit.windows.baseWindow import BaseWindowController
+from lib.tools.defaults import getDefault
 from mojo.events import addObserver, removeObserver
 from mojo.roboFont import version as roboFontVersion
 from mojo.roboFont import RGlyph
@@ -27,6 +28,8 @@ options = {
     "collinear_vectors_max_distance": 2,
     "semi_hv_vectors_min_distance": 30,
     "zero_handles_max_distance": 0,
+    
+    "grid_length": getDefault('glyphViewRoundValues'),
 }
 
 class RedArrowUI(BaseWindowController):
@@ -314,6 +317,7 @@ class RedArrowUI(BaseWindowController):
 
 def getGlyphReport(font, glyph, options):
     #start = time()
+    options["grid_length"] = getDefault('glyphViewRoundValues')
     myPen = OutlineTestPen(font, options)
     glyph.drawPoints(myPen)
     #stop = time()
