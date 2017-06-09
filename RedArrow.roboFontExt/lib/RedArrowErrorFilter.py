@@ -86,7 +86,7 @@ class RedArrowErrorFilter():
         for n in glyphnames:
             g = font[n]
             otp = OutlineTestPen(CurrentFont(), options)
-            g.draw(otp)
+            g.drawPoints(otp)
             if otp.errors:
                 if len(otp.errors) > 0:
                     for e in otp.errors:
