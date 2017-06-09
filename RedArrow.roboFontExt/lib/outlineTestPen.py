@@ -8,20 +8,29 @@ from robofab.pens.pointPen import BasePointToSegmentPen
 
 # Helper functions
 
+def get_extrema_points_vectors(roots, pt1, pt2, pt3, pt4):
+	split_segments = [p for p in splitCubicAtT(pt1, pt2, pt3, pt4, *roots)[:-1]]
+	points = [p[3] for p in split_segments]
+	vectors = [get_vector(p[2], p[3]) for p in split_segments]
+	return points, vectors
+
 def getExtremaForCubic(pt1, pt2, pt3, pt4, h=True, v=False):
 	(ax, ay), (bx, by), c, d = calcCubicParameters(pt1, pt2, pt3, pt4)
 	ax *= 3.0
 	ay *= 3.0
 	bx *= 2.0
 	by *= 2.0
-	h_roots = []
-	v_roots = []
+	points = []
+	vectors = []
 	if h:
-		h_roots = [t for t in solveQuadratic(ay, by, c[1]) if 0 < t < 1]
+		roots = [t for t in solveQuadratic(ay, by, c[1]) if 0 < t < 1]
+		points, vectors = get_extrema_points_vectors(roots, pt1, pt2, pt3, pt4)
 	if v:
-		v_roots  = [t for t in solveQuadratic(ax, bx, c[0]) if 0 < t < 1]
-	roots = h_roots + v_roots
-	return [p[3] for p in splitCubicAtT(pt1, pt2, pt3, pt4, *roots)[:-1]]
+		roots = [t for t in solveQuadratic(ax, bx, c[0]) if 0 < t < 1]
+		v_points, v_vectors = get_extrema_points_vectors(roots, pt1, pt2, pt3, pt4)
+		points += v_points
+		vectors += v_vectors
+	return points, vectors
 
 def round_point(pt, gridLength=1):
 	if gridLength == 1:
@@ -32,6 +41,9 @@ def round_point(pt, gridLength=1):
 		x = round(pt[0] / gridLength) * gridLength
 		y = round(pt[1] / gridLength) * gridLength
 		return (x, y)
+
+def get_vector(p0, p1):
+	return (p1[0] - p0[0], p1[1] - p0[1])
 
 def angle_between_points(p0, p1):
 	return atan2(p1[1] - p0[1], p1[0] - p0[0])
@@ -57,10 +69,11 @@ def transform_bbox(bbox, matrix):
 
 
 class OutlineError(object):
-	def __init__(self, position=None, kind="Unknown error", badness=None):
+	def __init__(self, position=None, kind="Unknown error", badness=None, vector=None):
 		self.position = position
 		self.kind = kind
 		self.badness = badness
+		self.vector = vector
 	
 	def __repr__(self):
 		r = "%s" % self.kind
@@ -83,6 +96,7 @@ class OutlineTestPen(BasePointToSegmentPen):
 			self.upm = 1000
 		
 		self.__currentPoint = None
+		self.current_vector = None
 		
 		self.options = options
 		self.run_tests = run_tests
@@ -250,22 +264,22 @@ class OutlineTestPen(BasePointToSegmentPen):
 			if self.extremum_calculate_badness:
 				badness = self._getBadness(pointToCheck, myRect)
 				if badness >= self.extremum_ignore_badness_below:
-					self.errors.append(OutlineError(pointToCheck, "Extremum", badness))
+					self.errors.append(OutlineError(pointToCheck, "Extremum", badness, None))
 			else:
-				self.errors.append(OutlineError(pointToCheck, "Extremum"))
+				self.errors.append(OutlineError(pointToCheck, "Extremum", vector = None))
 	
 	def _checkBboxSegment(self, bcp1, bcp2, pt):
 		# Like _checkBbox, but checks the whole segment and calculates extrema
 		myRect = normRect((self._prev[0], self._prev[1], pt[0], pt[1]))
 		if not pointInRect(bcp1, myRect) or not pointInRect(bcp2, myRect):
-			extrema = getExtremaForCubic(self._prev, bcp1, bcp2, pt, h=True, v=True)
-			for p in extrema:
+			extrema, vectors = getExtremaForCubic(self._prev, bcp1, bcp2, pt, h=True, v=True)
+			for i, p in enumerate(extrema):
 				if self.extremum_calculate_badness:
 					badness = self._getBadness(p, myRect)
 					if badness >= self.extremum_ignore_badness_below:
-						self.errors.append(OutlineError(p, "Extremum", badness))
+						self.errors.append(OutlineError(p, "Extremum", badness, vectors[i]))
 				else:
-					self.errors.append(OutlineError(p, "Extremum"))
+					self.errors.append(OutlineError(p, "Extremum", vector = vectors[i]))
 	
 	def _getBadness(self, pointToCheck, myRect):
 			# calculate distance of point to rect
@@ -325,6 +339,7 @@ class OutlineTestPen(BasePointToSegmentPen):
 		self.errors.append(OutlineError(
 			(int(round(pt[0])), int(round(pt[1]))),
 			"Fractional Coordinates", # (%0.2f, %0.2f)" % (pt[0], pt[1]),
+			vector = None,
 		))
 	
 	def _checkFractionalTransformation(self, baseGlyph, transformation):
@@ -342,6 +357,7 @@ class OutlineTestPen(BasePointToSegmentPen):
 					self.errors.append(OutlineError(
 						half_point((tbox[0], tbox[1]), (tbox[2], tbox[3])),
 						"Fractional transformation", # (%0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f)" % transformation
+						vector = None,
 					))
 					break
 		else:
@@ -350,6 +366,7 @@ class OutlineTestPen(BasePointToSegmentPen):
 					self.errors.append(OutlineError(
 						half_point((tbox[0], tbox[1]), (tbox[2], tbox[3])),
 						"Fractional transformation", # (%0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f)" % transformation
+						vector = None,
 					))
 					break
 	
@@ -399,15 +416,15 @@ class OutlineTestPen(BasePointToSegmentPen):
 					d = self.grid_length * 0.49
 				if d < badness:
 					if self.current_smooth or badness < self.smooth_connection_max_distance:
-						self.errors.append(OutlineError(pt, "Incorrect smooth connection", badness))
+						self.errors.append(OutlineError(pt, "Incorrect smooth connection", badness, vector = get_vector(self._prev_ref, pt)))
 	
 	def _checkEmptyLinesAndCurves(self, pt):
 		if self._prev == pt:
-			self.errors.append(OutlineError(pt, "Empty segment"))
+			self.errors.append(OutlineError(pt, "Empty segment", vector = self.current_vector))
 	
 	def _checkVectorsOnClosepath(self, pt):
 		if self._cstart == pt:
-			self.errors.append(OutlineError(pt, "Vector on closepath"))
+			self.errors.append(OutlineError(pt, "Vector on closepath", vector = self.current_vector))
 	
 	def _checkCollinearVectors(self, pt, next_ref):
 		'''Test for consecutive lines that have nearly the same angle.'''
@@ -423,7 +440,7 @@ class OutlineTestPen(BasePointToSegmentPen):
 				projected_pt = (pt[0] + dist * cos(phi1), pt[1] + dist * sin(phi1))
 				badness = distance_between_points(round_point(projected_pt, self.grid_length), next_ref)
 				if badness < self.collinear_vectors_max_distance:
-					self.errors.append(OutlineError(pt, "Collinear vectors", badness))
+					self.errors.append(OutlineError(pt, "Collinear vectors", badness, self.current_vector))
 	
 	def _checkSemiHorizontalVectors(self, p0, p1):
 		'''Test for semi-horizontal lines.'''
@@ -432,7 +449,7 @@ class OutlineTestPen(BasePointToSegmentPen):
 			#                 atan2(1, 31)
 			if 0 < abs(phi) < 0.032 or 0 < abs(phi - pi) < 0.032 or 0 < abs(abs(phi) - pi) < 0.032:
 				if abs(p1[1] - p0[1]) < 2:
-					self.errors.append(OutlineError(half_point(p0, p1), "Semi-horizontal line", degrees(phi)))
+					self.errors.append(OutlineError(half_point(p0, p1), "Semi-horizontal line", degrees(phi), get_vector(p0, p1)))
 	
 	def _checkSemiVerticalVectors(self, p0, p1):
 		'''Test for semi-vertical lines.'''
@@ -441,15 +458,16 @@ class OutlineTestPen(BasePointToSegmentPen):
 			phi = angle_between_points(p0, p1)
 			#                            atan2(31, 1)                       atan2(31, -1)
 			if 0 < abs(phi - 0.5 * pi) < 0.032 or 0 < abs(phi + 0.5 * pi) < 0.032:
-				self.errors.append(OutlineError(half_point(p0, p1), "Semi-vertical line", degrees(phi)))
+				self.errors.append(OutlineError(half_point(p0, p1), "Semi-vertical line", degrees(phi), get_vector(p0, p1)))
 	
 	def _checkZeroHandles(self, p0, p1):
 		badness = distance_between_points(p0, p1)
 		if badness <= self.zero_handles_max_distance:
-			self.errors.append(OutlineError(p1, "Zero handle", badness))
+			self.errors.append(OutlineError(p1, "Zero handle", badness, self.current_vector))
 	
 	def _flushContour(self, segments):
 		first_segment = True
+		self.current_vector = None
 		pt = segments[0][1][0][0]
 		self._prev = None
 		self._prev_ref = None
@@ -477,6 +495,7 @@ class OutlineTestPen(BasePointToSegmentPen):
 		
 			if segment_type == 'curve':
 				bcp1, bcp2, pt = points[0][0], points[1][0], points[2][0]
+				self.current_vector = get_vector(bcp2, pt)
 				self._runCurveTests(bcp1, bcp2, pt)
 				self._prev_ref = bcp2
 				self._prev = pt
@@ -488,6 +507,7 @@ class OutlineTestPen(BasePointToSegmentPen):
 				self.current_smooth = points[2][1]
 			elif segment_type == 'line':
 				pt = points[0][0]
+				self.current_vector = get_vector(self._prev, pt)
 				self._runLineTests(pt)
 				self._prev_ref = self._prev
 				#?
@@ -502,6 +522,7 @@ class OutlineTestPen(BasePointToSegmentPen):
 				bcp = points[0][0]
 				pt = points[-1][0]
 				bcps = [p[0] for p in points[:-1]]
+				self.current_vector = get_vector(bcps[-1], pt)
 				self._runQCurveTests(bcps, pt)
 				self._prev_ref = points[-2][0]
 				self._prev = pt
