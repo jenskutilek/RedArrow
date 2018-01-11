@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 #import outlineTestPen
 #reload(outlineTestPen)
 from outlineTestPen import OutlineTestPen
@@ -27,7 +28,7 @@ def run_test(font, glyphnames):
             #    g.mark = (1, 0.65, 0.6, 1)
             selection.append(g.name)
             #for e in otp.errors:
-            #    print e
+            #    print(e)
     font.selection = selection
 
 font = CurrentFont()

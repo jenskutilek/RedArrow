@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 from AppKit import NSBezierPath, NSImage
 from os.path import join, dirname, isfile
 from fontTools.misc.arrayTools import pointInRect
@@ -20,7 +21,7 @@ if isfile(iconpath):
     toolbarIcon = NSImage.alloc().initByReferencingFile_(iconpath)
 else:
     toolbarIcon = None
-    print "Warning: Toolbar icon not found at path: '%s'" % iconpath
+    print("Warning: Toolbar icon not found at path: '%s'" % iconpath)
 
 class ErrorSelection(object):
     def __init__(self):
@@ -69,19 +70,19 @@ class RedArrowFixerTool(BaseEventTool):
     
     def becomeActive(self):
         if DEBUG:
-            print "becomeActive"
+            print("becomeActive")
         self.ui = RedArrowUI()
         self.ui.fixer = self
     
     def becomeInactive(self):
         if DEBUG:
-            print "becomeInactive"
+            print("becomeInactive")
         self.ui.windowCloseCallback(None)
         self.ui.w.close()
     
     def fixSelected(self):
         if DEBUG:
-            print "fixSelected"
+            print("fixSelected")
         # Add an anchor at position p
         g = CurrentGlyph()
         #g.prepareUndo(undoTitle="Add anchor %s to /%s" % (newAnchorName, g.name))
@@ -121,7 +122,7 @@ class RedArrowFixerTool(BaseEventTool):
     def mouseUp(self, point):
         self.pEnd = point
         self._getSelectedPoints()
-        #print self.errorSelection
+        #print(self.errorSelection)
         self.pStart = None
         self.pEnd = None
         self._selectedMouseDownPoint = None
@@ -145,4 +146,4 @@ class RedArrowFixerTool(BaseEventTool):
         self.errorSelection.draw(scale)
         
 installTool(RedArrowFixerTool())
-print "Red Arrow Fixer installed in tool bar."
+print("Red Arrow Fixer installed in tool bar.")

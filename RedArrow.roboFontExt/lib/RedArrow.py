@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 import vanilla
 from defconAppKit.windows.baseWindow import BaseWindowController
 from lib.tools.defaults import getDefault
@@ -7,7 +8,6 @@ from mojo.roboFont import RGlyph
 from mojo.UI import UpdateCurrentGlyphView
 from mojo.drawingTools import save, restore, fill, stroke, line, strokeWidth, rect, translate, text, fontSize, font, lineJoin, lineCap
 #from time import time
-from string import strip
 
 DEBUG = False
 
@@ -222,9 +222,9 @@ class RedArrowUI(BaseWindowController):
         fill(0, 0.8, 0, 0.1)
         strokeWidth(width)
         stroke(0.9, 0.2, 0.1, 1)
-        line(-width/2, 0, size, 0)
-        line(0, width/2, 0, -size)
-        line(0, 0, size, -size)
+        line((-width/2, 0), (size, 0))
+        line((0, width/2), (0, -size))
+        line((0, 0), (size, -size))
         #rect(x-scale, y-scale, scale, scale)
         if self.showLabels:
             fill(0.4, 0.4, 0.4, 0.7)
@@ -256,7 +256,7 @@ class RedArrowUI(BaseWindowController):
                 errors_by_position[e.position].extend([e])
             else:
                 errors_by_position[e.position] = [e]
-        for pos, errors in errors_by_position.iteritems():
+        for pos, errors in errors_by_position.items():
             message = ""
             for e in errors:
                 if e.badness is None or not DEBUG:
@@ -265,7 +265,10 @@ class RedArrowUI(BaseWindowController):
                     message += "%s (Severity %0.1f), " % (e.kind, e.badness)
             self._drawArrow(pos, message.strip(", "), size, width)
         if options.get("show_bbox"):
-            box = glyph.box
+            if roboFontVersion >= "2.0b":
+                box = glyph.bounds
+            else:
+                box = glyph.box
             if box is not None:
                 save()
                 fill(None)
@@ -282,18 +285,21 @@ class RedArrowUI(BaseWindowController):
         size = 7
         save()
         translate(4, 4)
-        
-        fill(0.9, 0.4, 0.3, 1)
+
+        stroke(0.2)
+        strokeWidth(0.5)
+        lineJoin("miter")
+        fill(0.9, 0.4, 0.3)
         rect(-1, -1, size+1, size+1)
         
-        lineJoin("round")
         lineCap("butt") # butt, square, round
         strokeWidth(width)
-        stroke(1, 1, 1)
-        line(-width/2, 0, size, 0)
-        line(0, -width/2, 0, size)
-        line(width/2, width/2, size-0.5, size-0.5)
-        
+        stroke(1, 0.9, 0.65)
+        line((0, width / 2 - 0.5), (size - width / 2 + 0.5, width / 2 - 0.5))
+        line((width / 2 - 0.5, width / 2 - 1.5), (width / 2 - 0.5, size-width / 2 + 0.5))
+        lineCap("round")
+        line((width//2, width//2), (size-1.5, size-1.5))
+
         restore()
     
     def _drawGlyphCellArrows(self, notification):
@@ -321,32 +327,48 @@ def getGlyphReport(font, glyph, options):
     myPen = OutlineTestPen(font, options)
     glyph.drawPoints(myPen)
     #stop = time()
-    #print "updateOutlineCheck in %0.2f ms." % ((stop-start) * 1000)
+    #print("updateOutlineCheck in %0.2f ms." % ((stop-start) * 1000))
     return myPen.errors
 
 
-def RedArrowReportFactory(glyph, font):
+def RedArrowReportFactory(glyph):
     glyph = RGlyph(glyph)
     font = glyph.getParent()
     return getGlyphReport(font, glyph, options)
+
+
+def RedArrowReportFactoryUFO2(glyph, font):
+    return RedArrowReportFactory(glyph)
 
 
 def _registerFactory():
     # From https://github.com/typesupply/glyph-nanny/blob/master/Glyph%20Nanny.roboFontExt/lib/glyphNanny.py
     # always register if debugging
     # otherwise only register if it isn't registered
-    from defcon import addRepresentationFactory, removeRepresentationFactory
-    from defcon.objects import glyph as _xxxHackGlyph
-    if DEBUG:
-        if "de.kutilek.RedArrow.report" in _xxxHackGlyph._representationFactories:
-            for font in AllFonts():
-                for glyph in font:
-                    glyph.naked().destroyAllRepresentations()
-            removeRepresentationFactory("de.kutilek.RedArrow.report")
-        addRepresentationFactory("de.kutilek.RedArrow.report", RedArrowReportFactory)
-    else:
-        if "de.kutilek.RedArrow.report" not in _xxxHackGlyph._representationFactories:
+    if roboFontVersion >= "2.0b":
+        from defcon import registerRepresentationFactory, Glyph
+        if DEBUG:
+            if "de.kutilek.RedArrow.report" in Glyph.representationFactories:
+                for font in AllFonts():
+                    for glyph in font:
+                        glyph.naked().destroyAllRepresentations()
             addRepresentationFactory("de.kutilek.RedArrow.report", RedArrowReportFactory)
+        else:
+            if "de.kutilek.RedArrow.report" not in Glyph.representationFactories:
+                registerRepresentationFactory(Glyph, "de.kutilek.RedArrow.report", RedArrowReportFactory)
+    else:
+        from defcon import addRepresentationFactory, removeRepresentationFactory
+        from defcon.objects import glyph as _xxxHackGlyph
+        if DEBUG:
+            if "de.kutilek.RedArrow.report" in _xxxHackGlyph()._representationFactories:
+                for font in AllFonts():
+                    for glyph in font:
+                        glyph.naked().destroyAllRepresentations()
+                removeRepresentationFactory("de.kutilek.RedArrow.report")
+            addRepresentationFactory("de.kutilek.RedArrow.report", RedArrowReportFactoryUFO2)
+        else:
+            if "de.kutilek.RedArrow.report" not in _xxxHackGlyph()._representationFactories:
+                addRepresentationFactory("de.kutilek.RedArrow.report", RedArrowReportFactoryUFO2)
 
 
 def _unregisterFactory():

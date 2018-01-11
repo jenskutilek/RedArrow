@@ -1,8 +1,9 @@
+from __future__ import print_function, division
 #import outlineTestPen
 #reload(outlineTestPen)
 from outlineTestPen import OutlineTestPen
 
-from vanilla import *
+from vanilla import EditText, FloatingWindow, PopUpButton, TextBox
 import random
 
 class RedArrowErrorFilter():
@@ -96,13 +97,13 @@ class RedArrowErrorFilter():
                         if errorString == str(sender.getItems()[sender.get()]).split(" ")[0]:
                             #g.mark = (1, randomNumber, 0.6, 1)
                             selection.append(g.name)
-                            #print e
+                            #print(e)
                         else:
                             pass
         font.selection = selection
         # output of glyphs with errors in UI
         result = dict((x,selection.count(x)) for x in set(selection))
-        formattedResult = '  '.join("%s=%r" % (key,val) for (key,val) in sorted(result.iteritems()))
+        formattedResult = '  '.join("%s=%r" % (key,val) for (key,val) in sorted(result.items()))
         self.w.report.set(formattedResult)
 
 
