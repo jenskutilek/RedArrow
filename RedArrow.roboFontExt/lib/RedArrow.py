@@ -360,14 +360,14 @@ def _registerFactory():
         from defcon import addRepresentationFactory, removeRepresentationFactory
         from defcon.objects import glyph as _xxxHackGlyph
         if DEBUG:
-            if "de.kutilek.RedArrow.report" in _xxxHackGlyph()._representationFactories:
+            if "de.kutilek.RedArrow.report" in _xxxHackGlyph._representationFactories:
                 for font in AllFonts():
                     for glyph in font:
                         glyph.naked().destroyAllRepresentations()
                 removeRepresentationFactory("de.kutilek.RedArrow.report")
             addRepresentationFactory("de.kutilek.RedArrow.report", RedArrowReportFactoryUFO2)
         else:
-            if "de.kutilek.RedArrow.report" not in _xxxHackGlyph()._representationFactories:
+            if "de.kutilek.RedArrow.report" not in _xxxHackGlyph._representationFactories:
                 addRepresentationFactory("de.kutilek.RedArrow.report", RedArrowReportFactoryUFO2)
 
 
