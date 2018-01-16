@@ -352,7 +352,7 @@ def _registerFactory():
                 for font in AllFonts():
                     for glyph in font:
                         glyph.naked().destroyAllRepresentations()
-            addRepresentationFactory("de.kutilek.RedArrow.report", RedArrowReportFactory)
+            registerRepresentationFactory(Glyph, "de.kutilek.RedArrow.report", RedArrowReportFactory)
         else:
             if "de.kutilek.RedArrow.report" not in Glyph.representationFactories:
                 registerRepresentationFactory(Glyph, "de.kutilek.RedArrow.report", RedArrowReportFactory)
@@ -372,11 +372,19 @@ def _registerFactory():
 
 
 def _unregisterFactory():
-    from defcon import removeRepresentationFactory
-    try:
-        removeRepresentationFactory("de.kutilek.RedArrow.report")
-    except:
-        pass
+    if roboFontVersion >= "2.0b":
+        from defcon import unregisterRepresentationFactory
+        try:
+            unregisterRepresentationFactory(RedArrowReportFactory, "de.kutilek.RedArrow.report")
+        except:
+            pass
+    else:
+        from defcon import removeRepresentationFactory
+        try:
+            removeRepresentationFactory("de.kutilek.RedArrow.report")
+        except:
+            pass
+
 
 
 if __name__ == "__main__":
