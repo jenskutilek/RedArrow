@@ -27,14 +27,16 @@ except ImportError:
 # Helper functions
 
 if v == "g":
-	def get_bounds(glyph):
-		return glyph.bounds()
+	def get_bounds(font, glyphname):
+		return (0, 0, 0, 0)
+		# FIXME: We need to find the layer.bounds() in Glyphs
+		# return font.glyphs[glyphname].bounds()
 elif v == "rf3":
-	def get_bounds(glyph):
-		return glyph.bounds
+	def get_bounds(font, glyphname):
+		return font[glyphname].bounds
 else:
-	def get_bounds(glyph):
-		return glyph.box
+	def get_bounds(font, glyphname):
+		return font[glyphname].box
 
 
 def solveLinear(a, b):
@@ -495,7 +497,7 @@ class OutlineTestPen(BasePointToSegmentPen):
 		))
 	
 	def _checkFractionalTransformation(self, baseGlyph, transformation):
-		bbox = get_bounds(self.glyphSet[baseGlyph])
+		bbox = get_bounds(self.glyphSet, baseGlyph)
 		tbox = transform_bbox(bbox, transformation)
 		if self.fractional_ignore_point_zero:
 			for p in transformation:
