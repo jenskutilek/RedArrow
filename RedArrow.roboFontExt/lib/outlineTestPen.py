@@ -1,11 +1,40 @@
 from __future__ import division, print_function
 from math import atan2, degrees, cos, pi, sin, sqrt
-from fontTools.misc.arrayTools import pointInRect, normRect
-from fontTools.misc.bezierTools import calcCubicParameters, solveQuadratic, splitCubicAtT
-from fontTools.misc.transform import Transform
-from ufoLib.pointPen import BasePointToSegmentPen
+
+try:
+	from fontTools.misc.arrayTools import pointInRect, normRect
+	from fontTools.misc.bezierTools import calcCubicParameters, solveQuadratic, splitCubicAtT
+	from fontTools.misc.transform import Transform
+except ImportError:
+	from miniFontTools.misc.arrayTools import pointInRect, normRect
+	from miniFontTools.misc.bezierTools import calcQuadraticParameters, calcCubicParameters, solveQuadratic, splitCubicAtT, splitQuadraticAtT, epsilon
+	from miniFontTools.misc.transform import Transform
+
+try:
+	from mojo.roboFont import version as roboFontVersion
+	if roboFontVersion >= "3.0":
+		v = "rf3"
+		from ufoLib.pointPen import BasePointToSegmentPen
+	else:
+		v = "rf1"
+		from robofab.pens import BasePointToSegmentPen
+except ImportError:
+	v = "g"
+	from miniFontTools.pens.pointPen import BasePointToSegmentPen
+
+
 
 # Helper functions
+
+if v == "g":
+	def get_bounds(glyph):
+		return glyph.bounds()
+elif v == "rf3":
+	def get_bounds(glyph):
+		return glyph.bounds
+else:
+	def get_bounds(glyph):
+		return glyph.box
 
 
 def solveLinear(a, b):
@@ -466,16 +495,7 @@ class OutlineTestPen(BasePointToSegmentPen):
 		))
 	
 	def _checkFractionalTransformation(self, baseGlyph, transformation):
-		try:
-			# RF
-			try:
-				bbox = self.glyphSet[baseGlyph].bounds
-			except:
-				bbox = self.glyphSet[baseGlyph].box
-		except:
-			# Glyphs FIXME
-			# bbox = self.glyphSet.glyphs[baseGlyph].bounds()
-			bbox = (0, 0, 0, 0)
+		bbox = get_bounds(self.glyphSet[baseGlyph])
 		tbox = transform_bbox(bbox, transformation)
 		if self.fractional_ignore_point_zero:
 			for p in transformation:

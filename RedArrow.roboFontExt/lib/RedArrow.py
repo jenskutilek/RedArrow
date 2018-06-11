@@ -1,5 +1,10 @@
 from __future__ import print_function, division
 import vanilla
+
+from AppKit import NSAffineTransform, NSBezierPath, NSColor, NSFont, NSFontAttributeName, NSForegroundColorAttributeName, NSMakeRect, NSMutableParagraphStyle, NSPoint, NSRect, NSString
+from geometry_functions import distance_between_points
+from math import atan2, cos, pi, sin, degrees
+
 from defconAppKit.windows.baseWindow import BaseWindowController
 from lib.tools.defaults import getDefault
 from mojo.events import addObserver, removeObserver
@@ -37,8 +42,10 @@ class RedArrowUI(BaseWindowController):
         
         self.drawing = False
         self.fixer = None
-        self.showLabels = False
+        self.show_labels = False
+        self.mouse_position = (0, 0)
         self.errors = {}
+        self.track_mouse = False
         
         self.w = vanilla.FloatingWindow((240, 298), "RedArrow", closable = not(tool_mode))
         x0 = 25
@@ -140,8 +147,7 @@ class RedArrowUI(BaseWindowController):
             self.hideRedArrows()
     
     def showRedArrows(self):
-        if roboFontVersion > "1.5.1":
-            _registerFactory()
+        _registerFactory()
         self.addObservers()
         self.drawing = True
         UpdateCurrentGlyphView()
@@ -149,16 +155,21 @@ class RedArrowUI(BaseWindowController):
     def hideRedArrows(self):
         self.errors = {}
         self.removeObservers()
-        if roboFontVersion > "1.5.1":
-            _unregisterFactory()
+        _unregisterFactory()
         self.drawing = False
         UpdateCurrentGlyphView()
     
     def toggleShowLabels(self, sender):
-        if self.showLabels:
-            self.showLabels = False
+        if self.show_labels:
+            self.show_labels = False
+            if not self.track_mouse:
+                addObserver(self, "mouseMoved", "mouseMoved")
+                self.track_mouse = True
         else:
-            self.showLabels = True
+            self.show_labels = True
+            if self.track_mouse:
+                removeObserver(self, "mouseMoved")
+                self.track_mouse = False
         UpdateCurrentGlyphView()
     
     
@@ -190,68 +201,135 @@ class RedArrowUI(BaseWindowController):
         options["semi_hv_vectors_min_distance"] = int(sender.get())
         UpdateCurrentGlyphView()
     
+    def mouseMoved(self, info):
+        point = info["point"]
+        self.mouse_position = (point.x, point.y)
+        UpdateCurrentGlyphView()
+    
     def addObservers(self):
         addObserver(self, "_drawArrows", "drawInactive")
         addObserver(self, "_drawArrows", "drawBackground")
-        if roboFontVersion >= "1.7":
-            addObserver(self, "_drawGlyphCellArrows", "glyphCellDrawBackground")
+        addObserver(self, "_drawGlyphCellArrows", "glyphCellDrawBackground")
         #addObserver(self, "_updateOutlineCheck", "currentGlyphChanged")
         #addObserver(self, "_updateOutlineCheck", "draw")
-    
-    
+        addObserver(self, "mouseMoved", "mouseMoved")
+        self.track_mouse = True
+
     def removeObservers(self):
         removeObserver(self, "drawBackground")
         removeObserver(self, "drawInactive")
-        if roboFontVersion >= "1.7":
-            removeObserver(self, "glyphCellDrawBackground")
+        removeObserver(self, "glyphCellDrawBackground")
         #removeObserver(self, "currentGlyphChanged")
         #removeObserver(self, "draw")
+        removeObserver(self, "mouseMoved")
+        self.track_mouse = False
     
     def _fixSelected(self, sender=None):
         if self.fixer is not None:
             self.fixer.fixSelected()
     
-    def _drawArrow(self, position, kind, size, width):
-        if position is not None:
-            x, y = position
+    def _drawArrow(self, position, kind, size, vector = (-1, 1)):
+        if vector is None:
+            vector = (-1, 1)
+        angle = atan2(vector[0], -vector[1])
+        size *= 2
+        x, y = position
+        head_ratio = 0.7
+        w = size * 0.5
+        tail_width = 0.3
+        
+        chin = 0.5 * (w - w * tail_width) # part under the head
+
+        NSColor.colorWithCalibratedRed_green_blue_alpha_( 0.9, 0.1, 0.0, 0.85 ).set()
+        t = NSAffineTransform.transform()
+        t.translateXBy_yBy_(x, y)
+        t.rotateByRadians_(angle)
+        myPath = NSBezierPath.alloc().init()
+
+        myPath.moveToPoint_(         (0, 0)                                       )
+        myPath.relativeLineToPoint_( (-size * head_ratio,        w * 0.5)         )
+        myPath.relativeLineToPoint_( (0,                         -chin)           )
+        myPath.relativeLineToPoint_( (-size * (1 - head_ratio),  0)               )
+        myPath.relativeLineToPoint_( (0,                         -w * tail_width) )
+        myPath.relativeLineToPoint_( (size * (1 - head_ratio),   0)               )
+        myPath.relativeLineToPoint_( (0,                         -chin)           )
+        myPath.closePath()
+        myPath.transformUsingAffineTransform_(t)
+        myPath.fill()
+        
+        if self.show_labels or distance_between_points(self.mouse_position, position) < size:
+            self._drawTextLabel(
+                transform = t,
+                text = kind,
+                size = size,
+                vector = vector,
+            )
+    
+
+    def _drawTextLabel(self, transform, text, size, vector):
+        if vector is None:
+            vector = (-1, 1)
+        angle = atan2(vector[0], -vector[1])
+        text_size = 0.5 * size
+        
+        #para_style = NSMutableParagraphStyle.alloc().init()
+        #para_style.setAlignment_(NSCenterTextAlignment)
+
+        attrs = {
+            NSFontAttributeName:            NSFont.systemFontOfSize_(text_size),
+            NSForegroundColorAttributeName: NSColor.colorWithCalibratedRed_green_blue_alpha_( 0.4, 0.4, 0.6, 0.7 ),
+            #NSParagraphStyleAttributeName:  para_style,
+        }
+        myString = NSString.string().stringByAppendingString_(text)
+        bbox = myString.sizeWithAttributes_(attrs)
+        bw = bbox.width
+        bh = bbox.height
+
+        text_pt = NSPoint()
+        text_pt.y = 0
+
+        if -0.5 * pi < angle <= 0.5 * pi:
+            text_pt.x = -1.3 * size - bw / 2 * cos(angle) - bh / 2 * sin(angle)
         else:
-            x = 0
-            y = 0
-        save()
-        translate(x, y)
-        fill(0, 0.8, 0, 0.1)
-        strokeWidth(width)
-        stroke(0.9, 0.2, 0.1, 1)
-        line((-width/2, 0), (size, 0))
-        line((0, width/2), (0, -size))
-        line((0, 0), (size, -size))
-        #rect(x-scale, y-scale, scale, scale)
-        if self.showLabels:
-            fill(0.4, 0.4, 0.4, 0.7)
-            stroke(None)
-            font("LucidaGrande")
-            fontSize(int(round(size * 1.1)))
-            text(kind, (int(round(size * 1.8)), int(round(-size))))
-        restore()
+            text_pt.x = -1.3 * size + bw / 2 * cos(angle) + bh / 2 * sin(angle)
+        
+        text_pt = transform.transformPoint_(text_pt)
+        
+        rr = NSRect(
+            origin = (text_pt.x - bw / 2, text_pt.y - bh / 2),
+            size = (bw, bh)
+        )
+        
+        if DEBUG:
+            NSColor.colorWithCalibratedRed_green_blue_alpha_( 0, 0, 0, 0.15 ).set()
+            myRect = NSBezierPath.bezierPathWithRect_(rr)
+            myRect.setLineWidth_(0.05 * size)
+            myRect.stroke()
+        
+        myString.drawInRect_withAttributes_(
+            rr,
+            attrs
+        )
+
+        #myString.drawAtPoint_withAttributes_(
+        #   text_pt,
+        #   attrs
+        #)
     
-    
+
     def _drawArrows(self, notification):
         glyph = notification["glyph"]
         if glyph is None:
             return
         font = glyph.getParent()
         
-        if roboFontVersion > "1.5.1":
-            self.errors = glyph.getRepresentation("de.kutilek.RedArrow.report")
-        else:
-            self.errors = getGlyphReport(font, glyph)
+        self.errors = glyph.getRepresentation("de.kutilek.RedArrow.report")
         
         scale = notification["scale"]
         size = 10 * scale
         width = 3 * scale
         errors_by_position = {}
         for e in self.errors:
-            #if not e.kind == "Vector on closepath": # FIXME
             if e.position in errors_by_position:
                 errors_by_position[e.position].extend([e])
             else:
@@ -263,7 +341,11 @@ class RedArrowUI(BaseWindowController):
                     message += "%s, " % (e.kind)
                 else:
                     message += "%s (Severity %0.1f), " % (e.kind, e.badness)
-            self._drawArrow(pos, message.strip(", "), size, width)
+            if pos is None:
+                pos = (self.current_layer.width + 20, -10)
+                self._drawUnspecified(pos, message.strip(", "), size, e.vector)
+            else:
+                self._drawArrow(pos, message.strip(", "), size, e.vector)
         if options.get("show_bbox"):
             if roboFontVersion >= "2.0b":
                 box = glyph.bounds
@@ -277,7 +359,33 @@ class RedArrowUI(BaseWindowController):
                 x, y, w, h = box
                 rect(x, y, w-x, h-y)
                 restore()
-    
+
+
+    def _drawUnspecified(self, position, kind, size, vector = (-1, 1)):
+        if vector is None:
+            vector = (-1, 1)
+        angle = atan2(vector[1], vector[0])
+        circle_size = size * 1.3
+        x, y = position
+        NSColor.colorWithCalibratedRed_green_blue_alpha_( 0.9, 0.1, 0.0, 0.85 ).set()
+        
+        t = NSAffineTransform.transform()
+        t.translateXBy_yBy_(x, y)
+        t.rotateByRadians_(angle)
+
+        myPath = NSBezierPath.alloc().init()
+        myPath.setLineWidth_( 0 )
+        myPath.appendBezierPathWithOvalInRect_( NSMakeRect( x - 0.5 * circle_size, y - 0.5 * circle_size, circle_size, circle_size ) )
+        myPath.stroke()
+        if self.show_labels or distance_between_points(self.mouse_position, position) < size:
+            self._drawTextLabel(
+                transform = t,
+                text = kind,
+                size = size,
+                angle = angle,
+            )
+
+
     def _drawGlyphCellArrow(self, num_errors):
         x = 3
         y = 3
@@ -314,8 +422,7 @@ class RedArrowUI(BaseWindowController):
     def windowCloseCallback(self, sender):
         if self.drawing:
             self.removeObservers()
-            if roboFontVersion > "1.5.1":
-                _unregisterFactory()
+            _unregisterFactory()
         UpdateCurrentGlyphView()
         super(RedArrowUI, self).windowCloseCallback(sender)
 
