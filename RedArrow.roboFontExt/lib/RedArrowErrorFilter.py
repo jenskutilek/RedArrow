@@ -84,22 +84,20 @@ class RedArrowErrorFilter():
             return
         # start the outline test
         selection = []
+        otp = OutlineTestPen(CurrentFont(), options)
         for n in glyphnames:
+            otp.errors = []
             g = font[n]
-            otp = OutlineTestPen(CurrentFont(), options)
             g.drawPoints(otp)
             if otp.errors:
-                if len(otp.errors) > 0:
-                    for e in otp.errors:
-                        # convert error object to string
-                        errorString = str(e).split(" ")[0]
-                        # if the first part of error string = the first part of selection from PopUp                    
-                        if errorString == str(sender.getItems()[sender.get()]).split(" ")[0]:
-                            #g.mark = (1, randomNumber, 0.6, 1)
-                            selection.append(g.name)
-                            #print(e)
-                        else:
-                            pass
+                for e in otp.errors:
+                    # convert error object to string
+                    errorString = str(e).split(" ")[0]
+                    # if the first part of error string = the first part of selection from PopUp                    
+                    if errorString == str(sender.getItems()[sender.get()]).split(" ")[0]:
+                        #g.mark = (1, randomNumber, 0.6, 1)
+                        selection.append(g.name)
+                        #print(e)
         font.selection = selection
         # output of glyphs with errors in UI
         result = dict((x,selection.count(x)) for x in set(selection))

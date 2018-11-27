@@ -1,9 +1,9 @@
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from math import atan2, degrees, cos, pi, sin, sqrt
 
 try:
 	from fontTools.misc.arrayTools import pointInRect, normRect
-	from fontTools.misc.bezierTools import calcCubicParameters, solveQuadratic, splitCubicAtT
+	from fontTools.misc.bezierTools import calcQuadraticParameters, calcCubicParameters, solveQuadratic, splitCubicAtT, splitQuadraticAtT, epsilon
 	from fontTools.misc.transform import Transform
 except ImportError:
 	from miniFontTools.misc.arrayTools import pointInRect, normRect
@@ -357,6 +357,11 @@ class OutlineTestPen(BasePointToSegmentPen):
 		if self.test_zero_handles:
 			self._checkZeroHandles(self._prev, bcp1)
 			self._checkZeroHandles(pt, bcp2)
+		if self.test_semi_hv:
+			self._checkSemiHorizontalHandle(self._prev, bcp1)
+			self._checkSemiHorizontalHandle(bcp2, pt)
+			self._checkSemiVerticalHandle(self._prev, bcp1)
+			self._checkSemiVerticalHandle(bcp2, pt)
 
 	def _runQCurveTests(self, bcps, pt):
 		if self.test_extrema:
@@ -372,6 +377,12 @@ class OutlineTestPen(BasePointToSegmentPen):
 			self._checkIncorrectSmoothConnection(self._prev, bcps[0])
 		if self.test_empty_segments:
 			self._checkEmptyLinesAndCurves(pt)
+		if self.test_semi_hv:
+			pp = self._prev
+			for p in bcps + [pt]:
+				self._checkSemiHorizontalHandle(pp, p)
+				self._checkSemiVerticalHandle(pp, p)
+				pp = p
 	
 	def _runClosePathTests(self):
 		if self.test_closepath and self._prev_type == "line":
@@ -418,12 +429,12 @@ class OutlineTestPen(BasePointToSegmentPen):
 		for i in range(0, len(quad)-1, 2):
 			extrema, vectors = getExtremaForQuadratic(quad[i], quad[i + 1], quad[i + 2], h=True, v=True)
 			for i, p in enumerate(extrema):
-				if self.extremum_calculate_badness:
-					badness = self._getBadness(p, myRect)
-					if badness >= self.extremum_ignore_badness_below:
-						self.errors.append(OutlineError(p, "Extremum", badness, vectors[i]))
-				else:
-					self.errors.append(OutlineError(p, "Extremum", vector = vectors[i]))
+				#if self.extremum_calculate_badness:
+				#	badness = self._getBadness(p, myRect)
+				#	if badness >= self.extremum_ignore_badness_below:
+				#		self.errors.append(OutlineError(p, "Extremum", badness, vectors[i]))
+				#else:
+				self.errors.append(OutlineError(p, "Extremum", vector = vectors[i]))
 	
 	def _getBadness(self, pointToCheck, myRect):
 			# calculate distance of point to rect
@@ -607,6 +618,22 @@ class OutlineTestPen(BasePointToSegmentPen):
 			#                            atan2(31, 1)                       atan2(31, -1)
 			if 0 < abs(phi - 0.5 * pi) < 0.032 or 0 < abs(phi + 0.5 * pi) < 0.032:
 				self.errors.append(OutlineError(half_point(p0, p1), "Semi-vertical line", degrees(phi), get_vector(p0, p1)))
+
+	def _checkSemiHorizontalHandle(self, p0, p1):
+		'''Test for semi-horizontal handles.'''
+		phi = angle_between_points(p0, p1)
+		#                 atan2(1, 31)
+		if 0 < abs(phi) < 0.032 or 0 < abs(phi - pi) < 0.032 or 0 < abs(abs(phi) - pi) < 0.032:
+			if abs(p1[1] - p0[1]) < 2:
+				self.errors.append(OutlineError(half_point(p0, p1), "Semi-horizontal handle", degrees(phi), get_vector(p0, p1)))
+	
+	def _checkSemiVerticalHandle(self, p0, p1):
+		'''Test for semi-vertical handles.'''
+		# TODO: Option to respect Italic angle?
+		phi = angle_between_points(p0, p1)
+		#                            atan2(31, 1)                       atan2(31, -1)
+		if 0 < abs(phi - 0.5 * pi) < 0.032 or 0 < abs(phi + 0.5 * pi) < 0.032:
+			self.errors.append(OutlineError(half_point(p0, p1), "Semi-vertical handle", degrees(phi), get_vector(p0, p1)))
 	
 	def _checkZeroHandles(self, p0, p1):
 		badness = distance_between_points(p0, p1)
