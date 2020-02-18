@@ -14,7 +14,7 @@ try:
 	from mojo.roboFont import version as roboFontVersion
 	if roboFontVersion >= "3.0":
 		v = "rf3"
-		from ufoLib.pointPen import BasePointToSegmentPen
+		from fontTools.pens.pointPen import BasePointToSegmentPen
 	else:
 		v = "rf1"
 		from robofab.pens import BasePointToSegmentPen
