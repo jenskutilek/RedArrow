@@ -142,7 +142,7 @@ def drawArrows(errors, scale, show_bbox, current_layer):
         else:
             drawArrow(pos, message.strip(", "), size, e.vector)
     if show_bbox:
-        box = current_layer.glyph.bounds
+        box = current_layer.bounds
         if box is not None:
             save()
             fill(None)

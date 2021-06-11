@@ -177,11 +177,10 @@ class RedArrowUI(Subscriber, WindowController):
     def glyphEditorGlyphDidChange(self, info):
         print("glyphEditorGlyphDidChange")
         print(info)
-        glyph = info["glyph"]
-        if glyph is None:
+        self.current_layer = info["glyph"]
+        if self.current_layer is None:
             return
-        self.current_layer = info["layer"]
-        self._updateOutlineCheck(glyph)
+        self._updateOutlineCheck(self.current_layer)
 
     def toggleShowLabels(self, sender):
         if self.show_labels:
