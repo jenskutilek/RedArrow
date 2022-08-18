@@ -509,25 +509,26 @@ class OutlineTestPen(BasePointToSegmentPen):
 	
 	def _checkFractionalTransformation(self, baseGlyph, transformation):
 		bbox = get_bounds(self.glyphSet, baseGlyph)
-		tbox = transform_bbox(bbox, transformation)
-		if self.fractional_ignore_point_zero:
-			for p in transformation:
-				if round(p) != p:
-					self.errors.append(OutlineError(
-						half_point((tbox[0], tbox[1]), (tbox[2], tbox[3])),
-						"Fractional transformation", # (%0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f)" % transformation
-						vector = None,
-					))
-					break
-		else:
-			for p in transformation:
-				if type(p) == float:
-					self.errors.append(OutlineError(
-						half_point((tbox[0], tbox[1]), (tbox[2], tbox[3])),
-						"Fractional transformation", # (%0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f)" % transformation
-						vector = None,
-					))
-					break
+		if bbox:
+			tbox = transform_bbox(bbox, transformation)
+			if self.fractional_ignore_point_zero:
+				for p in transformation:
+					if round(p) != p:
+						self.errors.append(OutlineError(
+							half_point((tbox[0], tbox[1]), (tbox[2], tbox[3])),
+							"Fractional transformation", # (%0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f)" % transformation
+							vector = None,
+						))
+						break
+			else:
+				for p in transformation:
+					if type(p) == float:
+						self.errors.append(OutlineError(
+							half_point((tbox[0], tbox[1]), (tbox[2], tbox[3])),
+							"Fractional transformation", # (%0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f)" % transformation
+							vector = None,
+						))
+						break
 	
 	def _checkIncorrectSmoothConnection(self, pt, next_ref):
 		'''Test for incorrect smooth connections.'''
