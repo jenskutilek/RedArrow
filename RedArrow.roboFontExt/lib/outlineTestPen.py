@@ -610,6 +610,9 @@ class OutlineTestPen(BasePointToSegmentPen):
 
     def _checkFractionalTransformation(self, baseGlyph, transformation):
         bbox = get_bounds(self.glyphSet, baseGlyph)
+        if bbox is None:
+            return
+
         tbox = transform_bbox(bbox, transformation)
         if self.fractional_ignore_point_zero:
             for p in transformation:
