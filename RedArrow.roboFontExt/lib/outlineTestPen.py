@@ -27,6 +27,7 @@ except ImportError:
 try:
     from mojo.roboFont import version as roboFontVersion
     from fontTools.pens.pointPen import BasePointToSegmentPen
+    v = "rf"
 except ImportError:
     v = "g"
     from miniFontTools.pens.pointPen import BasePointToSegmentPen
