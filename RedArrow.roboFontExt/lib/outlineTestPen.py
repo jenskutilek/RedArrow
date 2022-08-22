@@ -26,13 +26,7 @@ except ImportError:
 
 try:
     from mojo.roboFont import version as roboFontVersion
-
-    if roboFontVersion >= "3.0":
-        v = "rf3"
-        from fontTools.pens.pointPen import BasePointToSegmentPen
-    else:
-        v = "rf1"
-        from robofab.pens import BasePointToSegmentPen
+    from fontTools.pens.pointPen import BasePointToSegmentPen
 except ImportError:
     v = "g"
     from miniFontTools.pens.pointPen import BasePointToSegmentPen
@@ -42,22 +36,17 @@ except ImportError:
 
 if v == "g":
 
+    # Glyphs
     def get_bounds(font, glyphname):
         return (0, 0, 0, 0)
         # FIXME: We need to find the layer.bounds() in Glyphs
         # return font.glyphs[glyphname].bounds()
 
-
-elif v == "rf3":
-
-    def get_bounds(font, glyphname):
-        return font[glyphname].bounds
-
-
 else:
 
+    # RoboFont 3+
     def get_bounds(font, glyphname):
-        return font[glyphname].box
+        return font[glyphname].bounds
 
 
 def solveLinear(a, b):
