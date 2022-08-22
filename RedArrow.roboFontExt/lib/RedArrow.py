@@ -378,7 +378,6 @@ class RedArrowUI(BaseWindowController):
         glyph = notification["glyph"]
         if glyph is None:
             return
-        font = glyph.getParent()
 
         self.errors = glyph.getRepresentation("de.kutilek.RedArrow.report")
 
@@ -508,8 +507,7 @@ def getGlyphReport(font, glyph, options):
 
 def RedArrowReportFactory(glyph):
     glyph = RGlyph(glyph)
-    font = glyph.getParent()
-    return getGlyphReport(font, glyph, options)
+    return getGlyphReport(glyph.font, glyph, options)
 
 
 def RedArrowReportFactoryUFO2(glyph, font):
