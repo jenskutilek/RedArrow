@@ -136,14 +136,14 @@ def getInflectionsForCubic(pt1, pt2, pt3, pt4):
     c2 = (bx * cy) - (by * cx)
 
     if abs(c2) > 0.00001:
-        discr = (c1 ** 2) - (4 * c0 * c2)
+        discr = (c1**2) - (4 * c0 * c2)
         c2 *= 2
         if abs(discr) < 0.000001:
             root = -c1 / c2
             if (root > 0.001) and (root < 0.99):
                 roots.append(root)
         elif discr > 0:
-            discr = discr ** 0.5
+            discr = discr**0.5
             root = (-c1 - discr) / c2
             if (root > 0.001) and (root < 0.99):
                 roots.append(root)
