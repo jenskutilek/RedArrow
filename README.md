@@ -5,6 +5,8 @@ RedArrow
 
 RedArrow has never been properly ported to RoboFont 4, and interest in it seemed low. Check out [Glyh Nanny](https://github.com/typesupply/glyph-nanny) (which is much more exhaustive than RedArrow ever was) if you are looking for outline drawing critique.
 
+[RedArrow for Glyphs](https://github.com/jenskutilek/RedArrow-Glyphs) is still actively maintained.
+
 ## The Old Readme
 
 Finally you can have red arrows in RoboFont too.
